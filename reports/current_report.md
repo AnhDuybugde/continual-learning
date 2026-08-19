@@ -21,7 +21,7 @@
 | Common causal pipeline | PASS | ETTh1 smoke đã chạy thành công |
 | Leakage/fairness smoke tests | PASS | Unit và integration smoke pass |
 | Dependency capture | PASS | Runtime smoke đã được khóa |
-| External baseline readiness | PARTIAL | Causal contract PASS; FSNet import PASS; OneNet official import blocked; NatSR unavailable |
+| External baseline readiness | PARTIAL | FSNet method smoke PASS; OneNet fixed-blend engineering smoke PASS but full adaptive method NOT PASS; NatSR unavailable |
 | Full benchmark | NOT RUN | Chưa được phép chạy |
 
 ## Smoke result
@@ -52,6 +52,7 @@
 - External adapter contract tests: `3/3 PASS`.
 - Official source probe: FSNet import PASS; OneNet BLOCKED by missing `wandb`.
 - Latest smoke rerun: `1/1 PASS`; exact artifacts are under `artifacts/smoke_etth1/`.
+- Official external smoke: FSNet `1999/1999 PASS` (178.89s); OneNet `1999/1999 finite` (152.14s), but full adaptive OneNet method gate is NOT PASS because the current adapter uses fixed 0.5/0.5 blend.
 
 ## Artifacts
 
@@ -65,7 +66,7 @@
 
 ## Blockers and next action
 
-1. Resolve the official OneNet runtime dependency/protocol, then run an end-to-end causal smoke; do not substitute an unofficial implementation.
+1. Implement the official OneNet adaptive decision/weight update at the single-target adapter boundary, then rerun external smoke and fairness checks; do not substitute an unofficial implementation.
 2. Keep NatSR marked `unavailable` unless official provenance becomes verifiable.
 3. Parquet remains optional; JSONL/CSV/NPZ are source of truth.
 4. Re-run fairness/leakage tests after each adapter.

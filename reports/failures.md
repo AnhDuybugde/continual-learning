@@ -12,4 +12,4 @@
 - DER++ causal adapter and ETTh1 smoke are now verified; exact official-source HEAD is recorded in `reports/external_baseline_audit.md`.
 - FSNet and OneNet still require causal adapters. NatSR is marked unavailable because its paper-linked anonymous repository provenance is not verified.
 - `requirements.lock.txt` now records the tested runtime and instrumentation dependencies; parquet remains optional because no parquet engine is installed.
-- External adapter contract tests pass. FSNet official import probe passes; OneNet official import probe is blocked by missing `wandb` and legacy experiment coupling. Do not report either external baseline as benchmark-smoke PASS until an end-to-end causal official-model smoke is executed.
+- External adapter contract tests pass. FSNet official 1,999-sample smoke passes. OneNet official model import and fixed-blend engineering smoke pass, but the full adaptive OneNet method gate remains blocked until its decision/weight update is reproduced for the single-target protocol.

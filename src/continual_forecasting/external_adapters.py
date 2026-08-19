@@ -8,6 +8,7 @@ the benchmark's prediction-before-feedback-update ordering in this package.
 from __future__ import annotations
 
 import copy
+import importlib
 import importlib.util
 import sys
 from dataclasses import dataclass
@@ -53,26 +54,33 @@ class CausalExternalAdapter:
     feedback with :class:`PendingQueue` exactly as for native methods.
     """
 
-    def __init__(self, model: nn.Module, optimizer: torch.optim.Optimizer, device: str = "cpu") -> None:
+    def __init__(self, model: nn.Module, optimizer: torch.optim.Optimizer, device: str = "cpu", input_transform: Callable[[np.ndarray, int], np.ndarray] | None = None, post_update: Callable[[], None] | None = None) -> None:
         self.model = model.to(device)
         self.optimizer = optimizer
         self.device = torch.device(device)
         self.model_step = 0
+        self.input_transform = input_transform
+        self.post_update = post_update
+
+    def _inputs(self, inputs: np.ndarray, issue_time: int) -> torch.Tensor:
+        if self.input_transform is not None:
+            inputs = self.input_transform(inputs, issue_time)
+        return torch.as_tensor(inputs, dtype=torch.float32, device=self.device).unsqueeze(0)
 
     def predict(self, inputs: np.ndarray, issue_time: int = 0) -> np.ndarray:
-        del issue_time
         self.model.eval()
         with torch.no_grad():
-            output = self.model(torch.as_tensor(inputs, dtype=torch.float32, device=self.device).unsqueeze(0))
+            output = self.model(self._inputs(inputs, issue_time))
         result = output.detach().cpu().numpy()
+        if result.ndim == 3 and result.shape[0] == 1:
+            result = result[0]
         if not np.isfinite(result).all():
             raise FloatingPointError("non-finite external prediction")
         return result
 
     def observe_resolved(self, inputs: np.ndarray, target: np.ndarray, sample_id: int) -> dict:
-        del sample_id
         self.model.train()
-        x = torch.as_tensor(inputs, dtype=torch.float32, device=self.device).unsqueeze(0)
+        x = self._inputs(inputs, sample_id)
         y = torch.as_tensor(target, dtype=torch.float32, device=self.device).unsqueeze(0)
         self.optimizer.zero_grad(set_to_none=True)
         prediction = self.model(x)
@@ -81,6 +89,8 @@ class CausalExternalAdapter:
             raise FloatingPointError("non-finite external loss")
         loss.backward()
         self.optimizer.step()
+        if self.post_update is not None:
+            self.post_update()
         self.model_step += 1
         value = float(loss.detach().cpu())
         return {
@@ -152,3 +162,89 @@ def make_contract_adapter(factory: Callable[[], tuple[nn.Module, torch.optim.Opt
     """Build an adapter from an official factory without changing its model."""
     model, optimizer = factory()
     return CausalExternalAdapter(model, optimizer, device)
+
+
+def _load_official_net(source: OfficialSource):
+    """Load one official ``net`` class while isolating legacy top-level packages."""
+    path = Path(source.path)
+    entry = path / ("exp/exp_fsnet.py" if source.name == "FSNet" else "exp/exp_onenet_tcn.py")
+    spec = importlib.util.spec_from_file_location(f"_official_{source.name.lower()}_net", entry)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load official {source.name} entry point: {entry}")
+    old_path = list(sys.path)
+    roots = ("models", "exp", "utils", "data", "layers")
+    old_modules = {name: value for name, value in sys.modules.items() if name.split(".", 1)[0] in roots}
+    try:
+        for name in list(sys.modules):
+            if name.split(".", 1)[0] in roots:
+                del sys.modules[name]
+        sys.path.insert(0, str(path))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.net
+    finally:
+        sys.path[:] = old_path
+        for name in list(sys.modules):
+            if name.split(".", 1)[0] in roots:
+                del sys.modules[name]
+        sys.modules.update(old_modules)
+
+
+def _timestamp_features(timestamps) -> np.ndarray:
+    """Match the official timeenc=2 seven-column feature order."""
+    values = []
+    for stamp in timestamps:
+        values.append([stamp.minute, stamp.hour, stamp.dayofweek, stamp.day, stamp.dayofyear, stamp.month, stamp.isocalendar().week])
+    return np.asarray(values, dtype=np.float32)
+
+
+def build_official_adapter(name: str, input_size: int, target_size: int, horizon: int, lookback: int, lr: float, seed: int, device: str = "cpu") -> CausalExternalAdapter:
+    """Instantiate a pinned official model behind the causal contract.
+
+    The caller must call ``set_timestamps`` before prediction.  This keeps
+    timestamp-derived covariates aligned with the shared dataset stream.
+    """
+    source = FSNET_SOURCE if name == "FSNet" else ONENET_SOURCE
+    torch.manual_seed(seed)
+    net_class = _load_official_net(source)
+    args = type("OfficialArgs", (), {})()
+    args.enc_in = input_size
+    args.c_out = target_size
+    args.pred_len = horizon
+    args.seq_len = lookback
+    args.individual = False
+    official = net_class(args, torch.device(device))
+    official = official.to(device)
+
+    class Wrapped(nn.Module):
+        def __init__(self, model):
+            super().__init__()
+            self.model = model
+
+        def forward(self, x):
+            if name == "FSNet":
+                output = self.model(x)
+            else:
+                raw, marks = x[..., :input_size], x[..., input_size:]
+                _, y1, y2 = self.model.forward_weight(raw, marks, 0.5, 0.5)
+                y1 = y1.reshape(x.shape[0], horizon, input_size)[..., -target_size:]
+                y2 = y2.reshape(x.shape[0], horizon, target_size)
+                output = 0.5 * y1 + 0.5 * y2
+            return output.reshape(x.shape[0], horizon, target_size)
+
+    wrapped = Wrapped(official)
+    optimizer = torch.optim.AdamW(wrapped.parameters(), lr=lr)
+    timestamps_holder: list = []
+
+    def transform(inputs: np.ndarray, issue_time: int) -> np.ndarray:
+        if not timestamps_holder:
+            raise RuntimeError("official adapter timestamps were not configured")
+        start = issue_time - len(inputs) + 1
+        marks = _timestamp_features(timestamps_holder[start : issue_time + 1])
+        return np.concatenate([inputs, marks], axis=1)
+
+    post_update = getattr(official, "store_grad", None) if name == "FSNet" else None
+    adapter = CausalExternalAdapter(wrapped, optimizer, device, transform, post_update)
+    adapter.set_timestamps = lambda timestamps: timestamps_holder.extend(list(timestamps))
+    adapter.source = source
+    return adapter

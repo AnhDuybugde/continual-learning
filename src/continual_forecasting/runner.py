@@ -72,6 +72,8 @@ def _warm_start(model: OnlineForecaster, values: np.ndarray, targets: tuple[int,
 
 
 def _online(model: OnlineForecaster, values: np.ndarray, timestamps, online_start: int, targets: tuple[int, ...], cfg: SmokeConfig, artifact_dir: Path) -> dict:
+    if hasattr(model, "set_timestamps"):
+        model.set_timestamps(timestamps)
     queue = PendingQueue(cfg.horizon)
     predictions: list[np.ndarray] = []
     actuals: list[np.ndarray] = []

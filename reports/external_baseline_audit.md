@@ -40,5 +40,7 @@ remains prohibited at this stage.
 - `src/continual_forecasting/external_adapters.py` defines the shared causal boundary: prediction has no target argument, and targets are consumed only by `observe_resolved`.
 - Contract tests verify prediction-before-update, resolve-only target use, finite loss, and checkpoint restore.
 - FSNet official entry imports successfully at the pinned commit.
-- OneNet official entry is not runnable in the current environment because it imports `wandb` although that dependency is absent from its requirements; its legacy top-level module namespace also requires isolated loading.
-- No substitute implementation was used. External FSNet/OneNet smoke is not claimed as PASS.
+- OneNet official entry now imports after installing and locking `wandb==0.28.2`; isolated loading is required because of its legacy top-level module namespace.
+- The pinned official model paths ran 1,999 resolved samples with finite values and correct `H=1` release timing. FSNet includes its official post-update gradient-store hook.
+- The current OneNet wrapper uses the official two-branch `net.forward_weight` with a fixed 0.5/0.5 blend. This is an engineering adapter smoke, not a full OneNet method claim, because the paper's adaptive decision/weight updates are not yet reproduced at the single-target boundary.
+- Therefore FSNet adapter smoke is PASS; OneNet full method gate remains **NOT PASS**.

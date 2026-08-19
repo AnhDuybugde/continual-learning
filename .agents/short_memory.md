@@ -16,7 +16,7 @@
 - [ ] No parquet engine is installed; CSV/NPZ/JSONL remain source of truth.
 - [x] Added `requirements.lock.txt` for the captured smoke runtime: NumPy 2.2.6, pandas 2.3.3, PyTorch 2.6.0+cu124.
 - [x] Pinned official/current HEADs: DER++/Mammoth `e75a491c69fd729edeb01431afb753d9157d9a81`, FSNet `c776afc623fa6384a6a559121aacadd2bbea5968`, OneNet `65eed9d6c878133a4d81d9c381c69e742ad47fd0`.
-- [~] Causal adapter contract added in `src/continual_forecasting/external_adapters.py`; contract tests pass. FSNet official entry imports; OneNet probe is blocked by missing `wandb` and legacy protocol coupling. NatSR remains `unavailable` because its source is anonymous/unverified.
+- [~] `src/continual_forecasting/external_adapters.py` now runs pinned official FSNet and OneNet-TCN forward/update paths through the shared queue for 1,999 samples. FSNet post-update hook is wired; OneNet currently uses fixed 0.5/0.5 branch blend, so full OneNet adaptive-method gate remains open. NatSR remains `unavailable` because its source is anonymous/unverified.
 
 ## 3. Ghi chú nhanh cho session tiếp theo
 - Giữ dữ liệu gốc bất biến.
