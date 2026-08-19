@@ -9,9 +9,9 @@
 
 - Report date: 2026-08-19
 - Repository: `continual-learning`
-- Git commit at start of milestone: `7616bc4`
+- Git commit at start of milestone: `ab8ba6a2d1916472892e187655bfe7d8f366f12f`
 - Branch: `master`
-- Working tree: clean
+- Working tree: modified (adapter/report changes; pre-existing root `curren_report.md` deletion preserved)
 - Data gốc: không sửa hoặc commit
 
 ## Current gate
@@ -21,7 +21,7 @@
 | Common causal pipeline | PASS | ETTh1 smoke đã chạy thành công |
 | Leakage/fairness smoke tests | PASS | Unit và integration smoke pass |
 | Dependency capture | PASS | Runtime smoke đã được khóa |
-| External baseline readiness | PARTIAL | DER++ smoke PASS; FSNet/OneNet adapters pending; NatSR unavailable |
+| External baseline readiness | PARTIAL | Causal contract PASS; FSNet import PASS; OneNet official import blocked; NatSR unavailable |
 | Full benchmark | NOT RUN | Chưa được phép chạy |
 
 ## Smoke result
@@ -45,10 +45,13 @@
 
 ## Verification
 
-- Pipeline and integration tests: `10/10 PASS`.
+- Pipeline and integration tests: `13/13 PASS`.
 - Smoke integration test with DER++: `1/1 PASS`.
 - Checkpoint/restore, pending queue, horizon release, scaler leakage và metric recomputation: PASS.
 - Không ghi nhận NaN/Inf trong smoke.
+- External adapter contract tests: `3/3 PASS`.
+- Official source probe: FSNet import PASS; OneNet BLOCKED by missing `wandb`.
+- Latest smoke rerun: `1/1 PASS`; exact artifacts are under `artifacts/smoke_etth1/`.
 
 ## Artifacts
 
@@ -62,7 +65,7 @@
 
 ## Blockers and next action
 
-1. Implement and verify causal adapters for FSNet and OneNet.
+1. Resolve the official OneNet runtime dependency/protocol, then run an end-to-end causal smoke; do not substitute an unofficial implementation.
 2. Keep NatSR marked `unavailable` unless official provenance becomes verifiable.
 3. Parquet remains optional; JSONL/CSV/NPZ are source of truth.
 4. Re-run fairness/leakage tests after each adapter.

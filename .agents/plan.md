@@ -29,7 +29,8 @@
 ## Milestone 5 — External baselines và full benchmark (blocked)
 - [x] Audit nguồn chính thức/nguồn paper-linked cho DER++, FSNet, OneNet, NatSR; ghi blocker provenance của NatSR.
 - [x] Pin exact commit cho DER++, FSNet, OneNet; DER++ adapter đã smoke PASS.
-- [ ] Viết causal adapter cho FSNet/OneNet; NatSR đánh dấu unavailable.
-- [ ] Chỉ tích hợp sau smoke và fairness/leakage tests pass.
+- [~] Causal adapter contract cho official FSNet/OneNet đã viết và test; full official model smoke còn blocked bởi OneNet dependency/protocol.
+- [x] Chạy isolated provenance/import probe; FSNet importable, OneNet blocked bởi thiếu `wandb`.
+- [ ] Chỉ tích hợp official model vào smoke sau khi dependency/protocol được giải quyết; không dùng implementation thay thế.
 - [ ] Full benchmark/report chưa được phép chạy ở giai đoạn hiện tại.
 - [ ] Khởi tạo Git, commit, verify rồi push remote `https://github.com/AnhDuybugde/continual-learning`.

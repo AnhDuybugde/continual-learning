@@ -8,8 +8,8 @@ installed and no full benchmark was run.
 | Baseline | Source identified | Official-source status | Current decision |
 |---|---|---|---|
 | DER++ | [Mammoth](https://github.com/aimagelab/mammoth), `derpp` strategy | Official framework repository; HEAD checked 2026-08-19 | **Smoke PASS**, pinned HEAD `e75a491c69fd729edeb01431afb753d9157d9a81` |
-| FSNet | [Salesforce FSNet](https://github.com/salesforce/fsnet) | Official repository linked by the paper/authors; HEAD checked 2026-08-19 | Candidate, pinned HEAD `c776afc623fa6384a6a559121aacadd2bbea5968`; causal adapter pending |
-| OneNet | [yfzhang114/OneNet](https://github.com/yfzhang114/OneNet) | Official PyTorch implementation identified by the paper; HEAD checked 2026-08-19 | Candidate, pinned HEAD `65eed9d6c878133a4d81d9c381c69e742ad47fd0`; causal adapter pending |
+| FSNet | [Salesforce FSNet](https://github.com/salesforce/fsnet) | Official repository linked by the paper/authors; HEAD checked 2026-08-19 | Pinned HEAD `c776afc623fa6384a6a559121aacadd2bbea5968`; causal contract PASS, official entry import PASS |
+| OneNet | [yfzhang114/OneNet](https://github.com/yfzhang114/OneNet) | Official PyTorch implementation identified by the paper; HEAD checked 2026-08-19 | Pinned HEAD `65eed9d6c878133a4d81d9c381c69e742ad47fd0`; causal contract PASS, official import blocked by missing `wandb` |
 | NatSR | Repository linked from the paper: `anonymous.4open.science/r/NatSR` | Paper-linked anonymous source; official provenance not verified | **unavailable**, not used and not blocking other baselines |
 
 ## Fairness checks still required
@@ -31,5 +31,14 @@ be downgraded in place.
 ## Gate
 
 The common pipeline gate remains PASS. DER++ is now smoke-verified. FSNet and
-OneNet remain pending causal adapters; NatSR is unavailable. Full benchmark
-execution remains prohibited at this stage.
+OneNet remains blocked from official-model smoke by its runtime dependency and
+legacy experiment coupling; NatSR is unavailable. Full benchmark execution
+remains prohibited at this stage.
+
+## Causal adapter verification (2026-08-19)
+
+- `src/continual_forecasting/external_adapters.py` defines the shared causal boundary: prediction has no target argument, and targets are consumed only by `observe_resolved`.
+- Contract tests verify prediction-before-update, resolve-only target use, finite loss, and checkpoint restore.
+- FSNet official entry imports successfully at the pinned commit.
+- OneNet official entry is not runnable in the current environment because it imports `wandb` although that dependency is absent from its requirements; its legacy top-level module namespace also requires isolated loading.
+- No substitute implementation was used. External FSNet/OneNet smoke is not claimed as PASS.
