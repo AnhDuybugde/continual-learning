@@ -22,3 +22,4 @@
 - Không chạy full benchmark; chỉ smoke sau khi leakage/fairness tests pass.
 - Mọi method phải dùng cùng split, scaler, timestamps, lookback, horizon và evaluated samples.
 - External audit is recorded in `reports/external_baseline_audit.md`; do not run full benchmark until its gate passes.
+- `curren_report.md` is now the replace-on-each-run current status report.
