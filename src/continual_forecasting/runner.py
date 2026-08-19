@@ -36,6 +36,15 @@ def set_seed(seed: int) -> None:
     torch.manual_seed(seed)
 
 
+def git_environment() -> dict[str, str | bool | None]:
+    try:
+        commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+        dirty = bool(subprocess.check_output(["git", "status", "--porcelain"], text=True).strip())
+        return {"git_commit": commit, "git_dirty": dirty}
+    except (OSError, subprocess.CalledProcessError):
+        return {"git_commit": None, "git_dirty": None}
+
+
 def _method(name: str, input_size: int, target_size: int, cfg: SmokeConfig, lr: float, device: str) -> OnlineForecaster:
     common = dict(input_size=input_size, target_size=target_size, horizon=cfg.horizon, lr=lr, seed=cfg.seed, device=device, channels=cfg.channels)
     if name == "OGD":
@@ -136,7 +145,8 @@ def run_smoke(dataset: DatasetFrame, output_root: str | Path, cfg: SmokeConfig, 
         result["validation_scores"] = validation_scores
         (output_root / name / "config.json").write_text(json.dumps({"method": name, "selected_learning_rate": selected[name], "validation_scores": validation_scores, **asdict(cfg)}, indent=2), encoding="utf-8")
         method_results[name] = result
-    manifest = {"dataset": dataset.name, "source_path": str(dataset.source_path), "source_sha256": dataset.source_sha256, "rows": len(values), "feature_columns": dataset.feature_columns, "target_columns": dataset.target_columns, "split": asdict(dataset.split), "lookback": cfg.lookback, "horizon": cfg.horizon, "seed": cfg.seed, "config": asdict(cfg), "environment": {"python": platform.python_version(), "torch": torch.__version__, "device": device}}
+    environment = {"python": platform.python_version(), "torch": torch.__version__, "device": device, **git_environment()}
+    manifest = {"dataset": dataset.name, "source_path": str(dataset.source_path), "source_sha256": dataset.source_sha256, "rows": len(values), "feature_columns": dataset.feature_columns, "target_columns": dataset.target_columns, "split": asdict(dataset.split), "lookback": cfg.lookback, "horizon": cfg.horizon, "seed": cfg.seed, "config": asdict(cfg), "environment": environment}
     (output_root / "config.json").write_text(json.dumps(asdict(cfg), indent=2), encoding="utf-8")
     (output_root / "data_manifest.json").write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
     (output_root / "selected_configs.json").write_text(json.dumps(selected, indent=2), encoding="utf-8")
