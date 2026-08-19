@@ -14,7 +14,7 @@ import torch
 
 from .data import DatasetFrame, TrainOnlyStandardScaler, make_window, target_indices
 from .metrics import regression_metrics, training_mase_denominator
-from .methods import DPST, DPSTConfig, ER, OGD, OnlineForecaster
+from .methods import DERPP, DPST, DPSTConfig, ER, OGD, OnlineForecaster
 from .queue import PendingForecast, PendingQueue
 
 
@@ -29,6 +29,7 @@ class SmokeConfig:
     replay_batch_size: int = 8
     channels: int = 16
     warm_epochs: int = 1
+    derpp_distillation_weight: float = 0.5
 
 
 def set_seed(seed: int) -> None:
@@ -53,6 +54,8 @@ def _method(name: str, input_size: int, target_size: int, cfg: SmokeConfig, lr: 
         return ER(**common, buffer_size=cfg.buffer_size, replay_batch_size=cfg.replay_batch_size)
     if name == "DPST":
         return DPST(**common, buffer_size=cfg.buffer_size, replay_batch_size=cfg.replay_batch_size, dpst=DPSTConfig(eta_init=lr))
+    if name == "DERPP":
+        return DERPP(**common, buffer_size=cfg.buffer_size, replay_batch_size=cfg.replay_batch_size, distillation_weight=cfg.derpp_distillation_weight)
     raise ValueError(f"Unknown method: {name}")
 
 
@@ -73,6 +76,9 @@ def _online(model: OnlineForecaster, values: np.ndarray, timestamps, online_star
     predictions: list[np.ndarray] = []
     actuals: list[np.ndarray] = []
     rows: list[dict] = []
+    prediction_times: dict[int, float] = {}
+    prediction_time = 0.0
+    update_time = 0.0
     start = online_start
     stop = min(len(values) - cfg.horizon, start + cfg.online_prefix)
     update_start = time.perf_counter()
@@ -85,11 +91,16 @@ def _online(model: OnlineForecaster, values: np.ndarray, timestamps, online_star
             before = time.perf_counter()
             diagnostic = model.observe_resolved(pending.inputs, target, pending.issue_time)
             update_ms = (time.perf_counter() - before) * 1000.0
+            update_time += update_ms
             predictions.append(predicted)
             actuals.append(target)
-            rows.append({"sample_id": pending.issue_time, "issue_time": pending.issue_time, "resolve_time": current_time, "prequential_loss": prequential, "update_ms": update_ms, **diagnostic})
+            rows.append({"sample_id": pending.issue_time, "issue_time": pending.issue_time, "resolve_time": current_time, "prequential_loss": prequential, "update_ms": update_ms, "prediction_ms": prediction_times[pending.issue_time], **diagnostic})
         inputs, _ = make_window(values, current_time, cfg.lookback, cfg.horizon, targets)
+        before_prediction = time.perf_counter()
         forecast = model.predict(inputs, current_time)
+        prediction_ms = (time.perf_counter() - before_prediction) * 1000.0
+        prediction_time += prediction_ms
+        prediction_times[current_time] = prediction_ms
         queue.add(PendingForecast(current_time, inputs, forecast, model.model_step))
         if len(predictions) >= cfg.online_prefix:
             break
@@ -98,7 +109,7 @@ def _online(model: OnlineForecaster, values: np.ndarray, timestamps, online_star
     actual_array = np.asarray(actuals)
     train_targets = values[: online_start, list(targets)]
     metrics = regression_metrics(pred_array, actual_array, training_mase_denominator(train_targets))
-    metrics.update({"runtime_seconds": elapsed, "updates": len(rows), "evaluated_timestamps": [int(row["sample_id"]) for row in rows]})
+    metrics.update({"runtime_seconds": elapsed, "prediction_time_seconds": prediction_time / 1000.0, "update_time_seconds": update_time / 1000.0, "updates": len(rows), "evaluated_timestamps": [int(row["sample_id"]) for row in rows]})
     artifact_dir.mkdir(parents=True, exist_ok=True)
     np.savez(artifact_dir / "predictions.npz", predictions=pred_array, targets=actual_array, sample_ids=np.asarray(metrics["evaluated_timestamps"]))
     try:
@@ -113,7 +124,16 @@ def _online(model: OnlineForecaster, values: np.ndarray, timestamps, online_star
             handle.write(json.dumps(row) + "\n")
     (artifact_dir / "metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
     torch.save(model.state_dict(), artifact_dir / "checkpoint.pt")
-    (artifact_dir / "timing.json").write_text(json.dumps({"online_runtime_seconds": elapsed, "updates": len(rows)}, indent=2), encoding="utf-8")
+    memory = {"cpu_peak_rss_bytes": None, "cuda_peak_memory_allocated_bytes": None}
+    try:
+        import psutil
+        memory["cpu_peak_rss_bytes"] = int(psutil.Process().memory_info().rss)
+    except ImportError:
+        pass
+    if model.device.type == "cuda":
+        memory["cuda_peak_memory_allocated_bytes"] = int(torch.cuda.max_memory_allocated(model.device))
+    timing = {"online_runtime_seconds": elapsed, "prediction_time_seconds": prediction_time / 1000.0, "update_time_seconds": update_time / 1000.0, "updates": len(rows), **memory}
+    (artifact_dir / "timing.json").write_text(json.dumps(timing, indent=2), encoding="utf-8")
     (artifact_dir / "logs").mkdir(exist_ok=True)
     (artifact_dir / "logs" / "run.log").write_text(f"completed updates={len(rows)} finite=true runtime_seconds={elapsed:.6f}\n", encoding="utf-8")
     return {"metrics": metrics, "rows": rows}
@@ -127,7 +147,7 @@ def run_smoke(dataset: DatasetFrame, output_root: str | Path, cfg: SmokeConfig, 
     targets = target_indices(dataset)
     selected: dict[str, float] = {}
     method_results: dict[str, dict] = {}
-    for name in ("OGD", "ER", "DPST"):
+    for name in ("OGD", "ER", "DPST", "DERPP"):
         validation_scores: dict[float, float] = {}
         for lr in cfg.learning_rates:
             candidate = _method(name, values.shape[1], len(targets), cfg, lr, device)

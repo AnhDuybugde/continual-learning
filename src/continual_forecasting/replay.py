@@ -14,6 +14,7 @@ class ReplayItem:
     reference_loss: float
     insert_step: int
     sample_id: int
+    reference_prediction: np.ndarray | None = None
 
 
 class ReservoirBuffer:
@@ -45,3 +46,12 @@ class ReservoirBuffer:
 
     def __len__(self) -> int:
         return len(self.items)
+
+    def state_dict(self) -> dict:
+        return {"capacity": self.capacity, "items": self.items, "seen": self.seen, "rng_state": self._rng.bit_generator.state}
+
+    def load_state_dict(self, state: dict) -> None:
+        self.capacity = int(state["capacity"])
+        self.items = list(state["items"])
+        self.seen = int(state["seen"])
+        self._rng.bit_generator.state = state["rng_state"]

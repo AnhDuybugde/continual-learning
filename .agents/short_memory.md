@@ -12,10 +12,11 @@
 
 ## 2. Blockers & Vấn đề tồn đọng
 - [x] Git initialized, commit `55d875c`, and pushed to `origin/master`; working tree was clean after push.
-- [ ] Cần thêm peak memory instrumentation, automatic plots/report generator và parquet engine trước final benchmark.
+- [x] Added prediction/update timing, CPU RSS/CUDA memory instrumentation, and artifact-only trajectory plot generator.
+- [ ] No parquet engine is installed; CSV/NPZ/JSONL remain source of truth.
 - [x] Added `requirements.lock.txt` for the captured smoke runtime: NumPy 2.2.6, pandas 2.3.3, PyTorch 2.6.0+cu124.
-- [ ] External audit found official/source-linked candidates; exact commit pinning and adapters are pending.
-- [ ] NatSR provenance is currently blocked because the paper points to an anonymous repository that has not yet been verified as a stable official source.
+- [x] Pinned official/current HEADs: DER++/Mammoth `e75a491c69fd729edeb01431afb753d9157d9a81`, FSNet `c776afc623fa6384a6a559121aacadd2bbea5968`, OneNet `65eed9d6c878133a4d81d9c381c69e742ad47fd0`.
+- [ ] FSNet/OneNet causal adapters remain pending. NatSR is `unavailable` because its source is anonymous/unverified.
 
 ## 3. Ghi chú nhanh cho session tiếp theo
 - Giữ dữ liệu gốc bất biến.

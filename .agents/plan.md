@@ -18,17 +18,18 @@
 - [x] OGD trên resolved sample.
 - [x] Reservoir replay và ER với ngân sách chung.
 - [x] DPST-Core: adaptive `eta`, adaptive `lambda`, alignment và forgetting diagnostics.
-- [ ] DER++ sau khi smoke pipeline nền tảng đã ổn định.
+- [x] DER++ regression objective, causal adapter, replay prediction storage và ETTh1 smoke.
 
 ## Milestone 4 — Tests và smoke validation
 - [x] Unit/integration tests: split/scaler leakage, queue/horizon, reservoir, checkpoint, metrics.
-- [x] Regression test `DPST(beta_eta=beta_lambda=0) == ER fixed` trong tolerance (controller state/update invariants).
+- [x] Regression test `DPST(beta_eta=beta_lambda=0) == ER fixed` trajectory trong `rtol=1e-6`, `atol=1e-8`.
 - [x] Smoke ETTh1, `H=1`, `L=60`, một seed, 1.999 resolved samples, hai LR candidates.
 - [x] Smoke report và failure report; không chạy full benchmark.
 
 ## Milestone 5 — External baselines và full benchmark (blocked)
 - [x] Audit nguồn chính thức/nguồn paper-linked cho DER++, FSNet, OneNet, NatSR; ghi blocker provenance của NatSR.
-- [ ] Pin exact commit và viết causal adapter cho từng baseline sau khi gate provenance pass.
+- [x] Pin exact commit cho DER++, FSNet, OneNet; DER++ adapter đã smoke PASS.
+- [ ] Viết causal adapter cho FSNet/OneNet; NatSR đánh dấu unavailable.
 - [ ] Chỉ tích hợp sau smoke và fairness/leakage tests pass.
 - [ ] Full benchmark/report chưa được phép chạy ở giai đoạn hiện tại.
 - [ ] Khởi tạo Git, commit, verify rồi push remote `https://github.com/AnhDuybugde/continual-learning`.

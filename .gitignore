@@ -6,3 +6,4 @@ artifacts/
 data/
 *.egg-info/
 .coverage
+.codegraph/

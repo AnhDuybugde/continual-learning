@@ -12,7 +12,7 @@ python scripts/run_smoke.py --data data/all_six_datasets/ETT-small/ETTh1.csv --o
 
 ## Methods
 
-OGD, ER, and DPST-Core share the same causal TCN, optimizer family, split, scaler, timestamps, and evaluated samples. DER++, FSNet, OneNet, and NatSR remain pending official-source integration.
+OGD, ER, DPST-Core, and DER++ share the same causal TCN, optimizer family, split, scaler, timestamps, and evaluated samples. FSNet and OneNet remain pending causal adapters; NatSR is unavailable pending provenance.
 
 ## Results
 
@@ -23,9 +23,10 @@ ETTh1 contains 17,420 hourly rows. The fixed split is train `[0, 3484)`, validat
 | OGD | 0.001 | 0.109258 | 0.019369 | 1.230648 | 1,999 | 5.99 |
 | ER | 0.001 | 0.091804 | 0.014680 | 1.034047 | 1,999 | 27.15 |
 | DPST-Core | 0.001 | 0.088667 | 0.014002 | 0.998713 | 1,999 | 40.81 |
+| DER++ | 0.001 | 0.091031 | 0.014569 | 1.025342 | 1,999 | 46.18 |
 
 All three methods used the same evaluated sample IDs (`4355..6353`), finite predictions/losses, the same split/scaler, and fixed seed `7`. These results are not final scientific claims.
 
 ## Tests and artifacts
 
-`python -m unittest discover -s tests -p test_pipeline.py -q` passes 7/7. The smoke execution test passes 1/1. Artifacts are under `artifacts/smoke_etth1/`: per-method `config.json`, `metrics.json`, `online_metrics.jsonl`, `predictions.npz`, checkpoint, timing, and logs; parquet availability is recorded by `predictions.parquet.unavailable.txt` when no parquet engine is installed. No full benchmark was run.
+`python -m unittest discover -s tests -q` passes 10/10. The smoke execution test passes 1/1. Artifacts are under `artifacts/smoke_etth1/`: per-method `config.json`, `metrics.json`, `online_metrics.jsonl`, `predictions.npz`, checkpoint, timing, and logs. Timing now includes prediction/update time and CPU RSS; plots are under `reports/figures/` and were generated from JSONL without rerunning a model. Parquet availability is recorded by `predictions.parquet.unavailable.txt` when no parquet engine is installed. No full benchmark was run.

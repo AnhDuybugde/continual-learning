@@ -88,12 +88,14 @@ class OnlineForecaster:
         }
 
     def state_dict(self) -> dict:
-        return {"model": copy.deepcopy(self.model.state_dict()), "optimizer": copy.deepcopy(self.optimizer.state_dict()), "model_step": self.model_step}
+        return {"model": copy.deepcopy(self.model.state_dict()), "optimizer": copy.deepcopy(self.optimizer.state_dict()), "model_step": self.model_step, "rng_state": copy.deepcopy(self.rng.bit_generator.state)}
 
     def load_state_dict(self, state: dict) -> None:
         self.model.load_state_dict(state["model"])
         self.optimizer.load_state_dict(state["optimizer"])
         self.model_step = state["model_step"]
+        if "rng_state" in state:
+            self.rng.bit_generator.state = state["rng_state"]
 
 
 class OGD(OnlineForecaster):
@@ -129,11 +131,66 @@ class ER(OnlineForecaster):
         self.model_step += 1
         reference = float(self._loss(inputs, target).detach().cpu())
         self.buffer.add(ReplayItem(inputs.copy(), target.copy(), reference, self.model_step, sample_id))
-        return {"loss_new": new_value, "loss_replay": replay_value, "eta": self.optimizer.param_groups[0]["lr"], "lambda": self.replay_weight, "alignment": 0.0, "alignment_ema": 0.0, "forget_score": 0.0, "buffer_size": len(self.buffer), "update_norm": update_norm, "finite_status": True}
+        return {"loss_new": new_value, "loss_replay": replay_value, "total_loss": float(total.detach().cpu()), "eta": self.optimizer.param_groups[0]["lr"], "lambda": self.replay_weight, "alignment": 0.0, "alignment_ema": 0.0, "forget_score": 0.0, "buffer_size": len(self.buffer), "update_norm": update_norm, "finite_status": True}
 
     def state_dict(self) -> dict:
         state = super().state_dict()
-        state.update({"buffer": self.buffer, "replay_batch_size": self.replay_batch_size, "replay_weight": self.replay_weight})
+        state.update({"buffer": self.buffer.state_dict(), "replay_batch_size": self.replay_batch_size, "replay_weight": self.replay_weight})
+        return state
+
+    def load_state_dict(self, state: dict) -> None:
+        super().load_state_dict(state)
+        if isinstance(state["buffer"], ReservoirBuffer):
+            self.buffer = state["buffer"]
+        else:
+            self.buffer.load_state_dict(state["buffer"])
+
+
+class DERPP(ER):
+    """Regression adaptation of official DER++: target replay plus prediction distillation."""
+
+    def __init__(self, *args, distillation_weight: float = 0.5, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.distillation_weight = distillation_weight
+
+    def observe_resolved(self, inputs: np.ndarray, target: np.ndarray, sample_id: int) -> dict:
+        self.model.train()
+        replay = self.buffer.sample(self.replay_batch_size)
+        self.optimizer.zero_grad(set_to_none=True)
+        new_loss = self._loss(inputs, target)
+        replay_target_loss = torch.tensor(0.0, device=self.device)
+        replay_distill_loss = torch.tensor(0.0, device=self.device)
+        if replay:
+            replay_target_loss = torch.stack([self._loss(item.inputs, item.target) for item in replay]).mean()
+            distill_terms = []
+            for item in replay:
+                if item.reference_prediction is not None:
+                    x = torch.as_tensor(item.inputs, dtype=torch.float32, device=self.device).unsqueeze(0)
+                    stored = torch.as_tensor(item.reference_prediction, dtype=torch.float32, device=self.device).unsqueeze(0)
+                    distill_terms.append(torch.mean((self.model(x) - stored) ** 2))
+            if distill_terms:
+                replay_distill_loss = torch.stack(distill_terms).mean()
+        total = new_loss + self.replay_weight * replay_target_loss + self.distillation_weight * replay_distill_loss
+        total.backward()
+        before = [p.detach().clone() for p in self.model.parameters()]
+        self.optimizer.step()
+        update_norm = float(torch.sqrt(sum(torch.sum((after.detach() - prior) ** 2) for after, prior in zip(self.model.parameters(), before))).cpu())
+        new_value = float(new_loss.detach().cpu())
+        replay_value = float(replay_target_loss.detach().cpu())
+        _finite(new_value)
+        _finite(replay_value)
+        self.model_step += 1
+        self.model.eval()
+        with torch.no_grad():
+            x = torch.as_tensor(inputs, dtype=torch.float32, device=self.device).unsqueeze(0)
+            reference_prediction = self.model(x)[0].detach().cpu().numpy()
+        reference = float(self._loss(inputs, target).detach().cpu())
+        self.buffer.add(ReplayItem(inputs.copy(), target.copy(), reference, self.model_step, sample_id, reference_prediction))
+        return {"loss_new": new_value, "loss_replay": replay_value, "distillation_loss": float(replay_distill_loss.detach().cpu()), "total_loss": float(total.detach().cpu()), "eta": self.optimizer.param_groups[0]["lr"], "lambda": self.replay_weight, "alignment": 0.0, "alignment_ema": 0.0, "forget_score": 0.0, "buffer_size": len(self.buffer), "update_norm": update_norm, "finite_status": True}
+
+    def state_dict(self) -> dict:
+        state = super().state_dict()
+        state["distillation_weight"] = self.distillation_weight
         return state
 
 
@@ -198,7 +255,7 @@ class DPST(ER):
         reference = float(self._loss(inputs, target).detach().cpu())
         self.buffer.add(ReplayItem(inputs.copy(), target.copy(), reference, self.model_step, sample_id))
         self.controller_updates += 1
-        return {"loss_new": new_value, "loss_replay": replay_value, "eta": eta, "lambda": lam, "alignment": alignment, "alignment_ema": self.alignment_ema, "forget_score": forget, "buffer_size": len(self.buffer), "update_norm": update_norm, "finite_status": True}
+        return {"loss_new": new_value, "loss_replay": replay_value, "total_loss": float((new_loss + lam * replay_loss).detach().cpu()), "eta": eta, "lambda": lam, "alignment": alignment, "alignment_ema": self.alignment_ema, "forget_score": forget, "buffer_size": len(self.buffer), "update_norm": update_norm, "finite_status": True}
 
     def state_dict(self) -> dict:
         state = super().state_dict()

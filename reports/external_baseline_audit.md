@@ -7,10 +7,10 @@ installed and no full benchmark was run.
 
 | Baseline | Source identified | Official-source status | Current decision |
 |---|---|---|---|
-| DER++ | [Mammoth](https://github.com/aimagelab/mammoth), `derpp` strategy | Official framework repository for the implementation | Candidate after adapter and exact commit pinning |
-| FSNet | [Salesforce FSNet](https://github.com/salesforce/fsnet) | Official repository linked by the paper/authors | Candidate, but its README requires Python 3.7.3/PyTorch 1.8.0 and must be isolated from the current environment |
-| OneNet | [yfzhang114/OneNet](https://github.com/yfzhang114/OneNet) | Official PyTorch implementation identified by the paper | Candidate after exact commit pinning and causal-delay adapter audit |
-| NatSR | Repository linked from the paper: `anonymous.4open.science/r/NatSR` | Paper-linked source, but anonymous and not yet verified as a stable official repository/commit | BLOCKED for integration until provenance and reproducibility are verified |
+| DER++ | [Mammoth](https://github.com/aimagelab/mammoth), `derpp` strategy | Official framework repository; HEAD checked 2026-08-19 | **Smoke PASS**, pinned HEAD `e75a491c69fd729edeb01431afb753d9157d9a81` |
+| FSNet | [Salesforce FSNet](https://github.com/salesforce/fsnet) | Official repository linked by the paper/authors; HEAD checked 2026-08-19 | Candidate, pinned HEAD `c776afc623fa6384a6a559121aacadd2bbea5968`; causal adapter pending |
+| OneNet | [yfzhang114/OneNet](https://github.com/yfzhang114/OneNet) | Official PyTorch implementation identified by the paper; HEAD checked 2026-08-19 | Candidate, pinned HEAD `65eed9d6c878133a4d81d9c381c69e742ad47fd0`; causal adapter pending |
+| NatSR | Repository linked from the paper: `anonymous.4open.science/r/NatSR` | Paper-linked anonymous source; official provenance not verified | **unavailable**, not used and not blocking other baselines |
 
 ## Fairness checks still required
 
@@ -30,6 +30,6 @@ be downgraded in place.
 
 ## Gate
 
-The common pipeline gate remains PASS. The external-baseline gate is **BLOCKED**
-until NatSR provenance is verified and each candidate has an exact commit plus
-a causal adapter. Full benchmark execution remains prohibited at this stage.
+The common pipeline gate remains PASS. DER++ is now smoke-verified. FSNet and
+OneNet remain pending causal adapters; NatSR is unavailable. Full benchmark
+execution remains prohibited at this stage.

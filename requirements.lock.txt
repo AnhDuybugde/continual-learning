@@ -4,3 +4,5 @@
 numpy==2.2.6
 pandas==2.3.3
 torch==2.6.0+cu124
+psutil==7.2.2
+matplotlib==3.10.8
