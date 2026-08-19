@@ -4,7 +4,7 @@
 - [x] Đọc `.agents/*`, hai đặc tả benchmark/DPST và kiểm tra phạm vi dữ liệu.
 - [x] Xác nhận repository chưa có Git metadata; chưa khởi tạo/push trước khi có kết quả kiểm chứng.
 - [x] Khảo sát ETTh1: schema là `date` + 7 numeric columns, target smoke `OT`, hourly timestamp.
-- [x] Chốt dependency/environment manifest và cấu trúc artifact smoke.
+- [ ] Chốt fully pinned dependency lockfile; current exact runtime is recorded in the smoke environment manifest.
 
 ## Milestone 2 — Pipeline chung causal
 - [x] Dataset interface và chronological split 20% train / 5% validation / 75% online.

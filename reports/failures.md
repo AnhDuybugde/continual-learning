@@ -7,6 +7,7 @@
 
 ## Current blockers
 
-- The repository has no `.git` metadata yet, so commit/environment records contain no commit hash. Git initialization and remote push are intentionally deferred until this stage is reviewed/verified.
+- Git is now initialized and pushed. The latest smoke manifest records commit `55d875c0f5f67767b2a92de4db2b7a5581f54be4` with `git_dirty=false`.
 - No parquet engine was available in the environment; exact predictions are saved as `predictions.npz` and `predictions.csv`, with the fallback explicitly recorded. This is an artifact compatibility blocker for strict parquet-only consumers.
 - DER++, FSNet, OneNet, and NatSR official-source integration is not started.
+- `requirements.txt` is a minimal environment declaration, not yet a fully pinned lockfile; exact runtime versions are recorded in `artifacts/smoke_etth1/environment.json`.

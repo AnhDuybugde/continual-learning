@@ -11,8 +11,9 @@
   - `src/prompt/dpst_method_todo.md`
 
 ## 2. Blockers & Vấn đề tồn đọng
-- [ ] Repository chưa có `.git`; khởi tạo remote sau khi kiểm tra staged scope.
+- [x] Git initialized, commit `55d875c`, and pushed to `origin/master`; working tree was clean after push.
 - [ ] Cần thêm peak memory instrumentation, automatic plots/report generator và parquet engine trước final benchmark.
+- [ ] Dependency lockfile is not fully pinned yet.
 - [ ] External baselines chưa được kiểm tra package/official commit; chưa tích hợp.
 
 ## 3. Ghi chú nhanh cho session tiếp theo
