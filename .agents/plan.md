@@ -4,7 +4,7 @@
 - [x] Đọc `.agents/*`, hai đặc tả benchmark/DPST và kiểm tra phạm vi dữ liệu.
 - [x] Xác nhận repository chưa có Git metadata; chưa khởi tạo/push trước khi có kết quả kiểm chứng.
 - [x] Khảo sát ETTh1: schema là `date` + 7 numeric columns, target smoke `OT`, hourly timestamp.
-- [ ] Chốt fully pinned dependency lockfile; current exact runtime is recorded in the smoke environment manifest.
+- [x] Chốt dependency lockfile cho runtime smoke; external repositories vẫn cần environment isolation.
 
 ## Milestone 2 — Pipeline chung causal
 - [x] Dataset interface và chronological split 20% train / 5% validation / 75% online.
@@ -27,7 +27,8 @@
 - [x] Smoke report và failure report; không chạy full benchmark.
 
 ## Milestone 5 — External baselines và full benchmark (blocked)
-- [ ] Kiểm tra package/repository chính thức và pin exact commit cho DER++, FSNet, OneNet, NatSR.
+- [x] Audit nguồn chính thức/nguồn paper-linked cho DER++, FSNet, OneNet, NatSR; ghi blocker provenance của NatSR.
+- [ ] Pin exact commit và viết causal adapter cho từng baseline sau khi gate provenance pass.
 - [ ] Chỉ tích hợp sau smoke và fairness/leakage tests pass.
 - [ ] Full benchmark/report chưa được phép chạy ở giai đoạn hiện tại.
 - [ ] Khởi tạo Git, commit, verify rồi push remote `https://github.com/AnhDuybugde/continual-learning`.

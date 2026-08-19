@@ -13,10 +13,12 @@
 ## 2. Blockers & Vấn đề tồn đọng
 - [x] Git initialized, commit `55d875c`, and pushed to `origin/master`; working tree was clean after push.
 - [ ] Cần thêm peak memory instrumentation, automatic plots/report generator và parquet engine trước final benchmark.
-- [ ] Dependency lockfile is not fully pinned yet.
-- [ ] External baselines chưa được kiểm tra package/official commit; chưa tích hợp.
+- [x] Added `requirements.lock.txt` for the captured smoke runtime: NumPy 2.2.6, pandas 2.3.3, PyTorch 2.6.0+cu124.
+- [ ] External audit found official/source-linked candidates; exact commit pinning and adapters are pending.
+- [ ] NatSR provenance is currently blocked because the paper points to an anonymous repository that has not yet been verified as a stable official source.
 
 ## 3. Ghi chú nhanh cho session tiếp theo
 - Giữ dữ liệu gốc bất biến.
 - Không chạy full benchmark; chỉ smoke sau khi leakage/fairness tests pass.
 - Mọi method phải dùng cùng split, scaler, timestamps, lookback, horizon và evaluated samples.
+- External audit is recorded in `reports/external_baseline_audit.md`; do not run full benchmark until its gate passes.

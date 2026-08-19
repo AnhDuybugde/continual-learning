@@ -1,0 +1,6 @@
+# Reproduction environment captured by the ETTh1 engineering smoke run.
+# Torch's CUDA build is platform/index specific; keep the exact local build
+# recorded here and install from the matching PyTorch wheel index.
+numpy==2.2.6
+pandas==2.3.3
+torch==2.6.0+cu124
