@@ -30,6 +30,8 @@ class SmokeConfig:
     channels: int = 16
     warm_epochs: int = 1
     derpp_distillation_weight: float = 0.5
+    dpst_beta_eta: float = 0.01
+    dpst_beta_lambda: float = 0.01
 
 
 def set_seed(seed: int) -> None:
@@ -53,7 +55,16 @@ def _method(name: str, input_size: int, target_size: int, cfg: SmokeConfig, lr: 
     if name == "ER":
         return ER(**common, buffer_size=cfg.buffer_size, replay_batch_size=cfg.replay_batch_size)
     if name == "DPST":
-        return DPST(**common, buffer_size=cfg.buffer_size, replay_batch_size=cfg.replay_batch_size, dpst=DPSTConfig(eta_init=lr))
+        return DPST(
+            **common,
+            buffer_size=cfg.buffer_size,
+            replay_batch_size=cfg.replay_batch_size,
+            dpst=DPSTConfig(
+                eta_init=lr,
+                beta_eta=cfg.dpst_beta_eta,
+                beta_lambda=cfg.dpst_beta_lambda,
+            ),
+        )
     if name == "DERPP":
         return DERPP(**common, buffer_size=cfg.buffer_size, replay_batch_size=cfg.replay_batch_size, distillation_weight=cfg.derpp_distillation_weight)
     raise ValueError(f"Unknown method: {name}")
@@ -141,7 +152,13 @@ def _online(model: OnlineForecaster, values: np.ndarray, timestamps, online_star
     return {"metrics": metrics, "rows": rows}
 
 
-def run_smoke(dataset: DatasetFrame, output_root: str | Path, cfg: SmokeConfig, device: str = "cpu") -> dict:
+def run_smoke(
+    dataset: DatasetFrame,
+    output_root: str | Path,
+    cfg: SmokeConfig,
+    device: str = "cpu",
+    method_names: tuple[str, ...] = ("OGD", "ER", "DPST", "DERPP"),
+) -> dict:
     set_seed(cfg.seed)
     output_root = Path(output_root)
     scaler = TrainOnlyStandardScaler().fit(dataset.features[: dataset.split.train_end])
@@ -149,7 +166,7 @@ def run_smoke(dataset: DatasetFrame, output_root: str | Path, cfg: SmokeConfig, 
     targets = target_indices(dataset)
     selected: dict[str, float] = {}
     method_results: dict[str, dict] = {}
-    for name in ("OGD", "ER", "DPST", "DERPP"):
+    for name in method_names:
         validation_scores: dict[float, float] = {}
         for lr in cfg.learning_rates:
             candidate = _method(name, values.shape[1], len(targets), cfg, lr, device)

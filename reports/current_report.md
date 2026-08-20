@@ -23,6 +23,9 @@
 | Dependency capture | PASS | Runtime smoke đã được khóa |
 | External baseline readiness | PASS (except NatSR) | FSNet and OneNet official causal method smoke PASS; NatSR unavailable |
 | Full benchmark | NOT RUN | Chưa được phép chạy |
+| DPST trajectory equivalence | PASS | CPU deterministic test, `rtol=1e-6`, `atol=1e-8` |
+| Three-seed H=1 ablation | PASS (pilot) | ETTh1, 1,999 resolved samples per run; not confirmatory |
+| H=24 delayed-feedback smoke | PASS (engineering) | 176 resolved samples; release IDs `4355..4530` |
 
 ## Smoke result
 
@@ -46,6 +49,35 @@
 
 OneNet adaptive is now included directly in this Smoke result table. The old random-initialization result was invalidated; this row is prequential over the same 1,999 resolved ETTh1 samples after train-only warm-start and validation LR selection. Artifact: `artifacts/external_smoke/OneNet/smoke.json`.
 
+## DPST ablation milestone (engineering/pilot)
+
+All H=1 runs use ETTh1, the same 20%/5%/75% chronological split, train-only
+scaler, `L=60`, validation-only LR selection, CUDA, and 1,999 resolved samples.
+These artifacts are excluded from confirmatory statistics.
+
+| Method | MAE mean ± std | MSE mean ± std | Seeds |
+|---|---:|---:|---:|
+| ER | 0.089916 ± 0.002267 | 0.014234 ± 0.000756 | 0,1,2 |
+| DPST-eta | 0.091432 ± 0.002712 | 0.014659 ± 0.000814 | 0,1,2 |
+| DPST-lambda | 0.089082 ± 0.002054 | 0.013976 ± 0.000686 | 0,1,2 |
+| DPST-full | 0.089573 ± 0.002542 | 0.014052 ± 0.000779 | 0,1,2 |
+| DER++ | 0.089703 ± 0.002075 | 0.014161 ± 0.000728 | 0,1,2 |
+
+DPST-full beats ER and DER++ on mean MAE/MSE, and beats ER in every seed.
+However, eta-only loses to ER in every seed, while lambda-only is the strongest
+ablation; this supports a pilot component signal, not a claim that both
+components independently help.
+
+Artifacts: `artifacts/dpst_milestone/milestone_results.json` and
+`artifacts/dpst_milestone/H1/DERPP/results.json`.
+
+## H=24 delayed-feedback smoke
+
+Seed 0, prefix 200, with 176 resolved samples and release IDs `4355..4530` for
+ER, DPST, and DER++. Results: ER MAE/MSE `0.313632/0.157221`, DPST
+`0.306701/0.152023`, DER++ `0.293207/0.140646`. This is an engineering smoke,
+not a multi-seed or confirmatory result.
+
 ## Official External Baseline Smoke
 
 | Method | Official commit | Device | Resolved | Release timing | Finite | Runtime | Status |
@@ -64,7 +96,10 @@ validation only (`MSE=0.441491`; `lr=1e-3` scored `0.707949`).
 
 ## Verification
 
-- Pipeline and integration tests: `13/13 PASS`.
+- Deterministic pipeline tests: `9/9 PASS`; external adapter tests: `3/3 PASS`.
+- Full suite components now pass: deterministic pipeline `9/9`, external
+  adapters `3/3`, and long smoke integration `1/1` (the latter required a
+  longer timeout than the default command).
 - Smoke integration test with DER++: `1/1 PASS`.
 - Checkpoint/restore, pending queue, horizon release, scaler leakage và metric recomputation: PASS.
 - Không ghi nhận NaN/Inf trong smoke.
@@ -72,6 +107,7 @@ validation only (`MSE=0.441491`; `lr=1e-3` scored `0.707949`).
 - Official source probe: FSNet and OneNet import PASS; `wandb==0.28.2` is locked.
 - Latest smoke rerun: `1/1 PASS`; exact artifacts are under `artifacts/smoke_etth1/`.
 - Official external smoke: OneNet fair warm-start `1999/1999 PASS` (158.74s online; 821.3s total). The prior random-initialization result is invalidated; the fair row uses train-only warm-start and validation LR selection.
+- DPST equivalence: PASS. H=1 ablation: 12/12 runs finite with 1,999/1,999 updates. H=24 smoke: 3/3 methods finite with 176/176 updates.
 
 ## Artifacts
 
@@ -96,4 +132,6 @@ validation only (`MSE=0.441491`; `lr=1e-3` scored `0.707949`).
 ```powershell
 python -m unittest discover -s tests -q
 python scripts/run_smoke.py --data data/all_six_datasets/ETT-small/ETTh1.csv --output artifacts/smoke_etth1 --prefix 2000 --device cpu
+python scripts/run_dpst_milestone.py --device cuda --prefix 2000 --h24-prefix 200 --seeds 0 1 2
+python scripts/run_derpp_three_seeds.py --device cuda --prefix 2000 --seeds 0 1 2
 ```

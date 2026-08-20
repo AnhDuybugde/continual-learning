@@ -13,3 +13,10 @@
 - FSNet and OneNet causal adapters are verified. NatSR is marked unavailable because its paper-linked anonymous repository provenance is not verified.
 - `requirements.lock.txt` now records the tested runtime and instrumentation dependencies; parquet remains optional because no parquet engine is installed.
 - External adapter contract tests pass. FSNet and OneNet official 1,999-sample causal smoke pass. OneNet's adaptive decision and long-term weight trajectories are now recorded; OT projection remains documented as the only architectural compatibility note.
+- The default 120-second full-test command timed out, but the long smoke test
+  passes 1/1 with an extended timeout; deterministic pipeline (9/9) and
+  external adapter (3/3) suites also pass. This was a command-timeout issue,
+  not a test failure.
+- DPST H=1 three-seed ablation and H=24 smoke completed with finite losses and
+  full resolved counts. Eta-only did not improve ER; this is a scientific
+  limitation of the current pilot signal, not a technical failure.

@@ -34,3 +34,11 @@
 - [x] Hoàn thiện OneNet adaptive decision/weight update, rerun 1,999-sample smoke và full tests; không chạy full benchmark.
 - [ ] Full benchmark/report chưa được phép chạy ở giai đoạn hiện tại.
 - [ ] Khởi tạo Git, commit, verify rồi push remote `https://github.com/AnhDuybugde/continual-learning`.
+
+## Milestone 6 — DPST pilot confirmation (engineering only)
+- [x] Deterministic DPST trajectory-equivalence gate rechecked on CPU.
+- [x] Add reusable DPST beta controls and three-seed H=1 ablation runner.
+- [x] Run ER, DPST-eta, DPST-lambda, DPST-full, and DER++ on ETTh1 H=1.
+- [x] Run H=24 delayed-feedback smoke and verify release/update counts.
+- [x] Update current, benchmark, DPST, and failure reports with artifact paths.
+- [ ] Promote to multi-dataset/full benchmark; remains blocked until pilot evidence and fairness review are accepted.

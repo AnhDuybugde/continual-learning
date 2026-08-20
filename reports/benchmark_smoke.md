@@ -29,4 +29,10 @@ All four native methods used the same evaluated sample IDs (`4355..6353`), finit
 
 ## Tests and artifacts
 
-`python -m unittest discover -s tests -q` passes 13/13. The smoke execution test passes 1/1. Official external smoke passes for FSNet and adaptive OneNet at 1,999/1,999 resolved samples; artifacts are under `artifacts/external_smoke/`. Native artifacts are under `artifacts/smoke_etth1/`: per-method `config.json`, `metrics.json`, `online_metrics.jsonl`, `predictions.npz`, checkpoint, timing, and logs. Timing now includes prediction/update time and CPU RSS; plots are under `reports/figures/` and were generated from JSONL without rerunning a model. The official source probe is `artifacts/external_baseline_probe.json`. Parquet availability is recorded by `predictions.parquet.unavailable.txt` when no parquet engine is installed. No full benchmark was run.
+The deterministic pipeline tests pass 9/9, external adapter tests pass 3/3,
+and the long smoke integration test passes 1/1 with an extended timeout.
+Official external smoke passes for FSNet and adaptive OneNet at 1,999/1,999 resolved samples; artifacts are under `artifacts/external_smoke/`. Native artifacts are under `artifacts/smoke_etth1/`: per-method `config.json`, `metrics.json`, `online_metrics.jsonl`, `predictions.npz`, checkpoint, timing, and logs. Timing now includes prediction/update time and CPU RSS; plots are under `reports/figures/` and were generated from JSONL without rerunning a model. The official source probe is `artifacts/external_baseline_probe.json`. Parquet availability is recorded by `predictions.parquet.unavailable.txt` when no parquet engine is installed. No full benchmark was run.
+
+The follow-up engineering milestone added three-seed DPST ablations and a
+short H=24 delayed-feedback smoke. Results are in `reports/current_report.md`
+and `artifacts/dpst_milestone/`; they are excluded from confirmatory statistics.
