@@ -44,6 +44,7 @@ def run_one(name: str, values: np.ndarray, timestamps, online_start: int, target
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--prefix", type=int, default=8)
+    parser.add_argument("--methods", nargs="+", default=("FSNet", "OneNet"))
     args = parser.parse_args()
     dataset = load_dataset("data/all_six_datasets/ETT-small/ETTh1.csv")
     scaler = TrainOnlyStandardScaler().fit(dataset.features[: dataset.split.train_end])
@@ -51,7 +52,7 @@ def main() -> None:
     output = Path("artifacts/external_smoke")
     output.mkdir(parents=True, exist_ok=True)
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    results = [run_one(name, values, dataset.timestamps, dataset.split.validation_end, target_indices(dataset), 60, 1, args.prefix, output, device) for name in ("FSNet", "OneNet")]
+    results = [run_one(name, values, dataset.timestamps, dataset.split.validation_end, target_indices(dataset), 60, 1, args.prefix, output, device) for name in args.methods]
     (output / "summary.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(json.dumps(results, indent=2))
 

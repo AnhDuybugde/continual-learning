@@ -42,5 +42,5 @@ remains prohibited at this stage.
 - FSNet official entry imports successfully at the pinned commit.
 - OneNet official entry now imports after installing and locking `wandb==0.28.2`; isolated loading is required because of its legacy top-level module namespace.
 - The pinned official model paths ran 1,999 resolved samples with finite values and correct `H=1` release timing. FSNet includes its official post-update gradient-store hook.
-- The current OneNet wrapper uses the official two-branch `net.forward_weight` with a fixed 0.5/0.5 blend. This is an engineering adapter smoke, not a full OneNet method claim, because the paper's adaptive decision/weight updates are not yet reproduced at the single-target boundary.
-- Therefore FSNet adapter smoke is PASS; OneNet full method gate remains **NOT PASS**.
+- The OneNet wrapper now reproduces the official `onenet_tcn` sequence: branch forecaster update, short-term decision-MLP bias update, and long-term sigmoid weight update on detached branch forecasts. The ETTh1 OT adapter uses the final official time-branch channel as the scalar target projection; this mapping is fixed before online evaluation and is not tuned online.
+- Therefore FSNet and OneNet causal adapter smoke gates are **PASS**. The final OneNet run used the corrected decision-gradient path; runtime was 173.15 seconds for 1,999 resolved samples. The OT projection is an architectural compatibility note, not a post-hoc result adjustment.

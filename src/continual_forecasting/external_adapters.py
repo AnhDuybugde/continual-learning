@@ -116,6 +116,127 @@ class CausalExternalAdapter:
         self.model_step = int(state["model_step"])
 
 
+class OneNetTCNCausalAdapter:
+    """Causal reproduction of the official ``onenet_tcn`` online update.
+
+    The official implementation has two OCP controls: a long-term sigmoid
+    weight optimized on detached branch predictions and a short-term bias
+    produced by the decision MLP.  Both are updated only after a resolved
+    target arrives.  For the benchmark's OT target, the time branch's final
+    channel is compared with the scalar cross-variable branch output.
+    """
+
+    def __init__(self, official: nn.Module, decision: nn.Module, input_size: int, horizon: int, target_channel: int, lr: float, device: str) -> None:
+        self.model = official.to(device)
+        self.decision = decision.to(device)
+        self.input_size = input_size
+        self.horizon = horizon
+        self.target_channel = target_channel
+        self.device = torch.device(device)
+        self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=lr)
+        self.weight = nn.Parameter(torch.zeros(1, device=self.device))
+        self.bias = torch.zeros(1, device=self.device)
+        self.weight_optimizer = torch.optim.Adam([self.weight], lr=lr)
+        self.bias_optimizer = torch.optim.Adam(self.decision.parameters(), lr=lr)
+        self.model_step = 0
+        self.timestamps: list = []
+        self.source = ONENET_SOURCE
+
+    def set_timestamps(self, timestamps) -> None:
+        self.timestamps = list(timestamps)
+
+    def _inputs(self, inputs: np.ndarray, issue_time: int) -> tuple[torch.Tensor, torch.Tensor]:
+        if not self.timestamps:
+            raise RuntimeError("official adapter timestamps were not configured")
+        start = issue_time - len(inputs) + 1
+        marks = _timestamp_features(self.timestamps[start : issue_time + 1])
+        x = torch.as_tensor(inputs, dtype=torch.float32, device=self.device).unsqueeze(0)
+        x_mark = torch.as_tensor(marks, dtype=torch.float32, device=self.device).unsqueeze(0)
+        return x, x_mark
+
+    def _branches(self, inputs: np.ndarray, issue_time: int) -> tuple[torch.Tensor, torch.Tensor]:
+        x, x_mark = self._inputs(inputs, issue_time)
+        _, y1, y2 = self.model.forward_weight(x, x_mark, 1.0, 0.0)
+        # Official time branch emits one prediction per input channel.  The
+        # benchmark evaluates OT, whose channel is the final ETTh1 column.
+        y1 = y1.reshape(1, -1, self.input_size)[:, :, self.target_channel]
+        y2 = y2.reshape(1, self.horizon, -1)[:, :, 0]
+        return y1, y2
+
+    def predict(self, inputs: np.ndarray, issue_time: int = 0) -> np.ndarray:
+        self.model.eval()
+        self.decision.eval()
+        with torch.no_grad():
+            y1, y2 = self._branches(inputs, issue_time)
+            gate = torch.sigmoid(self.weight + self.bias).view(1, 1, 1)
+            output = gate * y1 + (1.0 - gate) * y2
+        result = output.detach().cpu().numpy()
+        if not np.isfinite(result).all():
+            raise FloatingPointError("non-finite OneNet prediction")
+        return result[0, :, None]
+
+    def observe_resolved(self, inputs: np.ndarray, target: np.ndarray, sample_id: int) -> dict:
+        self.model.train()
+        self.decision.train()
+        y = torch.as_tensor(target, dtype=torch.float32, device=self.device).reshape(1, self.horizon, 1)
+        y1, y2 = self._branches(inputs, sample_id)
+        gate = torch.sigmoid(self.weight + self.bias).view(1, 1, 1)
+        prediction = gate * y1 + (1.0 - gate) * y2
+        pre_update_loss = torch.mean((prediction - y) ** 2)
+
+        # Official onenet_tcn order: update both forecasters first.
+        self.optimizer.zero_grad(set_to_none=True)
+        branch_loss = torch.mean((y1 - y) ** 2) + torch.mean((y2 - y) ** 2)
+        branch_loss.backward()
+        self.optimizer.step()
+
+        # Short-term RL/decision update from current resolved outcome.
+        y1_detached, y2_detached = y1.detach(), y2.detach()
+        gate_long = torch.sigmoid(self.weight).view(1, 1, 1)
+        decision_input = torch.cat([gate_long * y1_detached, (1.0 - gate_long) * y2_detached, y], dim=2).reshape(1, -1)
+        bias_prediction = self.decision(decision_input)
+        gate_short = torch.sigmoid(self.weight.detach() + bias_prediction).view(1, 1, 1)
+        self.bias_optimizer.zero_grad(set_to_none=True)
+        bias_loss = torch.mean((gate_short * y1_detached + (1.0 - gate_short) * y2_detached - y) ** 2)
+        bias_loss.backward()
+        self.bias_optimizer.step()
+        self.bias = bias_prediction.detach().reshape(1)
+
+        # Long-term OCP/EGD weight update on detached branch forecasts.
+        self.weight_optimizer.zero_grad(set_to_none=True)
+        gate_long = torch.sigmoid(self.weight).view(1, 1, 1)
+        weight_loss = torch.mean((gate_long * y1_detached + (1.0 - gate_long) * y2_detached - y) ** 2)
+        weight_loss.backward()
+        self.weight_optimizer.step()
+        self.model_step += 1
+        values = (float(pre_update_loss.detach().cpu()), float(branch_loss.detach().cpu()), float(bias_loss.detach().cpu()), float(weight_loss.detach().cpu()))
+        if not np.isfinite(values).all():
+            raise FloatingPointError("non-finite OneNet loss")
+        return {
+            "loss_new": values[0], "loss_replay": 0.0, "total_loss": values[0],
+            "branch_loss": values[1], "decision_loss": values[2], "weight_loss": values[3],
+            "eta": float(self.optimizer.param_groups[0]["lr"]),
+            "lambda": float(torch.sigmoid(self.weight).detach().cpu()),
+            "alignment": float(torch.sigmoid(self.weight).detach().cpu()),
+            "alignment_ema": float(torch.sigmoid(self.bias).detach().cpu()),
+            "forget_score": 0.0, "buffer_size": 0, "update_norm": 0.0,
+            "finite_status": True,
+        }
+
+    def state_dict(self) -> dict:
+        return {"model": copy.deepcopy(self.model.state_dict()), "decision": copy.deepcopy(self.decision.state_dict()), "optimizer": copy.deepcopy(self.optimizer.state_dict()), "weight": self.weight.detach().clone(), "bias": self.bias.detach().clone(), "weight_optimizer": copy.deepcopy(self.weight_optimizer.state_dict()), "bias_optimizer": copy.deepcopy(self.bias_optimizer.state_dict()), "model_step": self.model_step}
+
+    def load_state_dict(self, state: dict) -> None:
+        self.model.load_state_dict(state["model"])
+        self.decision.load_state_dict(state["decision"])
+        self.optimizer.load_state_dict(state["optimizer"])
+        self.weight.data.copy_(state["weight"])
+        self.bias = state["bias"].to(self.device)
+        self.weight_optimizer.load_state_dict(state["weight_optimizer"])
+        self.bias_optimizer.load_state_dict(state["bias_optimizer"])
+        self.model_step = int(state["model_step"])
+
+
 def official_source_status(source: OfficialSource, root: str | Path = ".") -> dict:
     path = Path(root) / source.path
     return {"name": source.name, "repository": source.repository, "commit": source.commit, "path": str(path), "available": path.is_dir()}
@@ -164,7 +285,7 @@ def make_contract_adapter(factory: Callable[[], tuple[nn.Module, torch.optim.Opt
     return CausalExternalAdapter(model, optimizer, device)
 
 
-def _load_official_net(source: OfficialSource):
+def _load_official_module(source: OfficialSource):
     """Load one official ``net`` class while isolating legacy top-level packages."""
     path = Path(source.path)
     entry = path / ("exp/exp_fsnet.py" if source.name == "FSNet" else "exp/exp_onenet_tcn.py")
@@ -181,13 +302,17 @@ def _load_official_net(source: OfficialSource):
         sys.path.insert(0, str(path))
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        return module.net
+        return module
     finally:
         sys.path[:] = old_path
         for name in list(sys.modules):
             if name.split(".", 1)[0] in roots:
                 del sys.modules[name]
         sys.modules.update(old_modules)
+
+
+def _load_official_net(source: OfficialSource):
+    return _load_official_module(source).net
 
 
 def _timestamp_features(timestamps) -> np.ndarray:
@@ -206,7 +331,8 @@ def build_official_adapter(name: str, input_size: int, target_size: int, horizon
     """
     source = FSNET_SOURCE if name == "FSNet" else ONENET_SOURCE
     torch.manual_seed(seed)
-    net_class = _load_official_net(source)
+    official_module = _load_official_module(source)
+    net_class = official_module.net
     args = type("OfficialArgs", (), {})()
     args.enc_in = input_size
     args.c_out = target_size
@@ -215,6 +341,10 @@ def build_official_adapter(name: str, input_size: int, target_size: int, horizon
     args.individual = False
     official = net_class(args, torch.device(device))
     official = official.to(device)
+
+    if name == "OneNet":
+        decision = official_module.MLP(n_inputs=3 * horizon * target_size, n_outputs=1, mlp_width=32, mlp_depth=3, mlp_dropout=0.1, act=torch.nn.Tanh())
+        return OneNetTCNCausalAdapter(official, decision, input_size, horizon, input_size - 1, lr, device)
 
     class Wrapped(nn.Module):
         def __init__(self, model):

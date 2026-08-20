@@ -12,7 +12,7 @@ python scripts/run_smoke.py --data data/all_six_datasets/ETT-small/ETTh1.csv --o
 
 ## Methods
 
-OGD, ER, DPST-Core, and DER++ share the same causal TCN, optimizer family, split, scaler, timestamps, and evaluated samples. The external causal contract is verified separately; FSNet official import passes, OneNet official import is blocked by missing `wandb`, and NatSR is unavailable pending provenance.
+OGD, ER, DPST-Core, and DER++ share the same causal TCN, optimizer family, split, scaler, timestamps, and evaluated samples. FSNet and OneNet official causal adapters also pass the 1,999-sample engineering smoke; NatSR is unavailable pending provenance.
 
 ## Results
 
@@ -29,4 +29,4 @@ All three methods used the same evaluated sample IDs (`4355..6353`), finite pred
 
 ## Tests and artifacts
 
-`python -m unittest discover -s tests -q` passes 13/13. The smoke execution test passes 1/1. Artifacts are under `artifacts/smoke_etth1/`: per-method `config.json`, `metrics.json`, `online_metrics.jsonl`, `predictions.npz`, checkpoint, timing, and logs. Timing now includes prediction/update time and CPU RSS; plots are under `reports/figures/` and were generated from JSONL without rerunning a model. The official source probe is `artifacts/external_baseline_probe.json`. Parquet availability is recorded by `predictions.parquet.unavailable.txt` when no parquet engine is installed. No full benchmark was run.
+`python -m unittest discover -s tests -q` passes 13/13. The smoke execution test passes 1/1. Official external smoke passes for FSNet and adaptive OneNet at 1,999/1,999 resolved samples; artifacts are under `artifacts/external_smoke/`. Native artifacts are under `artifacts/smoke_etth1/`: per-method `config.json`, `metrics.json`, `online_metrics.jsonl`, `predictions.npz`, checkpoint, timing, and logs. Timing now includes prediction/update time and CPU RSS; plots are under `reports/figures/` and were generated from JSONL without rerunning a model. The official source probe is `artifacts/external_baseline_probe.json`. Parquet availability is recorded by `predictions.parquet.unavailable.txt` when no parquet engine is installed. No full benchmark was run.
