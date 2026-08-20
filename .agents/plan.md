@@ -48,4 +48,6 @@
 - [x] Run λ ∈ {0, 0.25, 0.5, 0.75, 1.0} over ETTh1 H=1 and seeds 0,1,2.
 - [x] Re-run official FSNet and OneNet TCN smoke on the common causal boundary.
 - [x] Confirm fixed λ=1.0 beats prior DPST-full pilot means on MAE and MSE.
-- [ ] Redesign/simplify DPST replay controller before broader benchmark; full benchmark remains blocked.
+- [x] Run blockwise causal oracle diagnostic over λ ∈ {0, 0.5, 1} with separate audit replay batches.
+- [x] Oracle selected λ=1.0 in all blocks and showed no gain over best fixed λ; DPST v2 not justified.
+- [ ] Redesign/simplify DPST replay controller only if a future predeclared diagnostic shows potential; full benchmark remains blocked.

@@ -35,6 +35,7 @@ Reproduction commands:
 ```text
 python scripts/run_dpst_milestone.py --device cuda --prefix 2000 --h24-prefix 200 --seeds 0 1 2
 python scripts/run_derpp_three_seeds.py --device cuda --prefix 2000 --seeds 0 1 2
+python scripts/run_dpst_oracle_diagnostic.py --device cuda --prefix 500 --seed 7 --block-size 50
 ```
 ## Fixed replay-weight comparison
 
@@ -55,6 +56,16 @@ fixed λ=1.0. Artifact: `artifacts/dpst_milestone/fixed_lambda/results.json`.
 The DPST-full lambda trajectory reached `0.9999999979` at the final update
 for each of seeds 0, 1, and 2. The present controller is therefore
 effectively saturating at λ=1.0, not showing a validated adaptive advantage.
-The DPST-full lambda trajectory reached `0.9999999979` at the final update
-for each of seeds 0, 1, and 2. The present controller is therefore
-effectively saturating at λ=1.0, not showing a validated adaptive advantage.
+
+## Blockwise oracle diagnostic
+
+The artifact-only diagnostic used ETTh1 H=1, seed 7, a 500-sample prefix
+(490 resolved samples), and candidate λ values `{0, 0.5, 1}`. At every
+decision it used the current resolved sample plus a separate audit replay
+batch of previously resolved items, excluding the training replay draw. The
+best fixed candidate was λ=1.0 with mean audit loss `0.0161349`; the oracle
+selected λ=1.0 in all ten blocks and achieved `0.0162006`, i.e. no gain over
+the best fixed candidate. DPST v2 is therefore not justified by this oracle
+pilot and remains blocked.
+
+Artifact: `artifacts/dpst_milestone/oracle_diagnostic.json`.

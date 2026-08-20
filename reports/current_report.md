@@ -9,7 +9,7 @@
 
 - Report date: 2026-08-20
 - Repository: `continual-learning`
-- Git commit at start of milestone: `ef22c8b`
+- Git commit at start of milestone: `bb6dbe0`
 - Branch: `master`
 - Working tree: modified (adapter/report changes; pre-existing root `curren_report.md` deletion preserved)
 - Data gốc: không sửa hoặc commit
@@ -34,7 +34,7 @@
 - Split: 20% train / 5% validation / 75% online
 - Lookback: `L=60`
 - Horizon: `H=1`
-- Seed: cố định
+- Seed: `7`
 - Resolved samples: `1,999`
 - Methods: OGD, ER, DPST-Core, DER++
 - Device: CPU
@@ -59,11 +59,11 @@ These artifacts are excluded from confirmatory statistics.
 
 | Method | MAE mean ± std | MSE mean ± std | Seeds |
 |---|---:|---:|---:|
-| ER | 0.089916 ± 0.002267 | 0.014234 ± 0.000756 | 0,1,2 |
-| DPST-eta | 0.091432 ± 0.002712 | 0.014659 ± 0.000814 | 0,1,2 |
-| DPST-lambda | 0.089082 ± 0.002054 | 0.013976 ± 0.000686 | 0,1,2 |
-| DPST-full | 0.089573 ± 0.002542 | 0.014052 ± 0.000779 | 0,1,2 |
-| DER++ | 0.089703 ± 0.002075 | 0.014161 ± 0.000728 | 0,1,2 |
+| ER | 0.089916 ± 0.002777 | 0.014234 ± 0.000926 | 0,1,2 |
+| DPST-eta | 0.091432 ± 0.003321 | 0.014659 ± 0.000997 | 0,1,2 |
+| DPST-lambda | 0.089082 ± 0.002516 | 0.013976 ± 0.000840 | 0,1,2 |
+| DPST-full | 0.089573 ± 0.003113 | 0.014052 ± 0.000954 | 0,1,2 |
+| DER++ | 0.089703 ± 0.002542 | 0.014161 ± 0.000891 | 0,1,2 |
 
 DPST-full beats ER and DER++ on mean MAE/MSE, and beats ER in every seed.
 However, eta-only loses to ER in every seed, while lambda-only is the strongest
@@ -128,12 +128,12 @@ FSNet fair warm-start selected `lr=3e-4` using validation only (`MSE=0.892541`;
 
 ## Blockers and next action
 
-1. Continue to the next predeclared benchmark milestone. Full benchmark remains gated separately; NatSR stays unavailable.
+1. Keep DPST v2 blocked: the blockwise oracle found no adaptive replay gain over fixed λ=1.0 on the pilot prefix. Full benchmark remains gated; NatSR stays unavailable.
 2. Keep NatSR marked `unavailable` unless official provenance becomes verifiable.
 3. Parquet remains optional; JSONL/CSV/NPZ are source of truth.
 4. Re-run fairness/leakage tests after each adapter.
-5. Redesign or simplify DPST replay control; fixed λ=1.0 currently beats
-   DPST-full on the ETTh1 pilot. Do not run full benchmark yet.
+5. Fixed λ=1.0 currently beats DPST-full and the oracle does not identify a
+   useful adaptive replay opportunity. Do not run full benchmark yet.
 
 ## Fixed replay-weight milestone
 
@@ -155,9 +155,19 @@ did not beat fixed λ=1.0. Artifact:
 The recorded DPST-full trajectories reached λ=`0.9999999979` at the final
 update for all three seeds, so the current controller is effectively
 saturating at λ=1.0 rather than demonstrating an adaptive advantage.
-The recorded DPST-full trajectories reached λ=`0.9999999979` at the final
-update for all three seeds, so the current controller is effectively
-saturating at λ=1.0 rather than demonstrating an adaptive advantage.
+
+## Blockwise oracle diagnostic
+
+An artifact-only diagnostic evaluated counterfactual one-step updates with
+λ ∈ {0, 0.5, 1.0} on a 500-sample ETTh1 H=1 prefix (490 resolved samples,
+10 blocks of 50). Each decision used the current resolved sample and a
+separate audit replay batch sampled only from previously resolved items;
+audit items were excluded from the training replay draw. The best fixed
+candidate was λ=1.0 (mean audit loss `0.0161349`). The blockwise oracle
+selected λ=1.0 in all 10 blocks and did not improve over the best fixed
+candidate (oracle mean `0.0162006`, gain `-0.0000657`). Therefore the
+diagnostic does not show potential benefit for DPST v2 on this stream; do
+not code v2 yet. Artifact: `artifacts/dpst_milestone/oracle_diagnostic.json`.
 
 ## Reproduction commands
 
@@ -168,4 +178,5 @@ python scripts/run_dpst_milestone.py --device cuda --prefix 2000 --h24-prefix 20
 python scripts/run_derpp_three_seeds.py --device cuda --prefix 2000 --seeds 0 1 2
 python scripts/run_fixed_lambda_milestone.py --device cuda --prefix 2000 --seeds 0 1 2
 python scripts/run_external_smoke.py --prefix 1999 --methods FSNet OneNet
+python scripts/run_dpst_oracle_diagnostic.py --device cuda --prefix 500 --seed 7 --block-size 50
 ```

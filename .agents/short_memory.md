@@ -41,3 +41,8 @@
   blocked; replay controller needs redesign/simplification.
 - DPST-full lambda trajectory reached `0.9999999979` at the final update in
   all three seeds, confirming effective saturation at λ=1.0.
+- Blockwise oracle diagnostic: ETTh1 H=1, seed 7, prefix 500 (490 resolved),
+  candidates `{0, 0.5, 1}`, separate resolved audit replay batch. Best fixed
+  λ=1.0 audit loss `0.0161349`; oracle `0.0162006`, selected λ=1.0 in all
+  10 blocks, no potential gain. Artifact:
+  `artifacts/dpst_milestone/oracle_diagnostic.json`. DPST v2 remains blocked.
