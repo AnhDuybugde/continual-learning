@@ -152,6 +152,12 @@ ETTh1 H=1, same split/scaler/LR selection/online prefix, three seeds, and
 DPST-full from the prior pilot was MAE `0.089573` and MSE `0.014052`, so it
 did not beat fixed λ=1.0. Artifact:
 `artifacts/dpst_milestone/fixed_lambda/results.json`.
+The recorded DPST-full trajectories reached λ=`0.9999999979` at the final
+update for all three seeds, so the current controller is effectively
+saturating at λ=1.0 rather than demonstrating an adaptive advantage.
+The recorded DPST-full trajectories reached λ=`0.9999999979` at the final
+update for all three seeds, so the current controller is effectively
+saturating at λ=1.0 rather than demonstrating an adaptive advantage.
 
 ## Reproduction commands
 

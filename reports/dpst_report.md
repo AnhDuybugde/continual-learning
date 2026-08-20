@@ -52,3 +52,9 @@ causal queue, and 1,999 resolved samples.
 
 DPST-full was MAE `0.089573` and MSE `0.014052`; it therefore did not beat
 fixed λ=1.0. Artifact: `artifacts/dpst_milestone/fixed_lambda/results.json`.
+The DPST-full lambda trajectory reached `0.9999999979` at the final update
+for each of seeds 0, 1, and 2. The present controller is therefore
+effectively saturating at λ=1.0, not showing a validated adaptive advantage.
+The DPST-full lambda trajectory reached `0.9999999979` at the final update
+for each of seeds 0, 1, and 2. The present controller is therefore
+effectively saturating at λ=1.0, not showing a validated adaptive advantage.

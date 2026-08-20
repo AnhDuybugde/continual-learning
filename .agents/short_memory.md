@@ -39,3 +39,5 @@
 - Final official TCN external rerun: FSNet `0.200855/0.085754`, OneNet
   `0.202376/0.083336`, both `1,999/1,999` finite. Full benchmark remains
   blocked; replay controller needs redesign/simplification.
+- DPST-full lambda trajectory reached `0.9999999979` at the final update in
+  all three seeds, confirming effective saturation at λ=1.0.
