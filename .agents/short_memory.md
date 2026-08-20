@@ -28,6 +28,7 @@
 - Milestone 6 artifacts: `artifacts/dpst_milestone/milestone_results.json` and `artifacts/dpst_milestone/H1/DERPP/results.json`.
 - H=1 three-seed means: ER `0.089916/0.014234`, DPST-eta `0.091432/0.014659`, DPST-lambda `0.089082/0.013976`, DPST-full `0.089573/0.014052`, DER++ `0.089703/0.014161` (MAE/MSE).
 - H=24 seed-0 smoke: ER `0.313632/0.157221`, DPST `0.306701/0.152023`, DER++ `0.293207/0.140646`, 176 resolved samples, release IDs `4355..4530`.
+- Fair FSNet rerun: selected `lr=3e-4`, MAE/MSE `0.200855/0.085754`, 1,999/1,999 finite resolved samples, 217.10s; artifact `artifacts/external_smoke/FSNet/smoke.json`.
 - Verification complete: deterministic pipeline 9/9, external adapters 3/3,
   and long smoke integration 1/1 with extended timeout; the default 120s
   aggregate command was only too short.

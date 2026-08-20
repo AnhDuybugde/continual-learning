@@ -45,6 +45,7 @@
 | ER | 0.091804 | 0.014680 | 1.034047 | 1,999 |
 | DPST-Core | 0.088667 | 0.014002 | 0.998713 | 1,999 |
 | DER++ | 0.091031 | 0.014569 | 1.025342 | 1,999 |
+| FSNet fair warm-start | 0.200855 | 0.085754 | 2.262366 | 1,999 |
 | OneNet adaptive (fair warm-start) | 0.208074 | 0.088077 | 2.343685 | 1,999 |
 
 OneNet adaptive is now included directly in this Smoke result table. The old random-initialization result was invalidated; this row is prequential over the same 1,999 resolved ETTh1 samples after train-only warm-start and validation LR selection. Artifact: `artifacts/external_smoke/OneNet/smoke.json`.
@@ -82,7 +83,7 @@ not a multi-seed or confirmatory result.
 
 | Method | Official commit | Device | Resolved | Release timing | Finite | Runtime | Status |
 |---|---|---|---:|---|---|---:|---|
-| FSNet | `c776afc623fa6384a6a559121aacadd2bbea5968` | CUDA | 1,999/1,999 | issue `4355..6353` → resolve `4356..6354` | yes | 178.89s | PASS |
+| FSNet fair warm-start | `c776afc623fa6384a6a559121aacadd2bbea5968` | CUDA | 1,999/1,999 | issue `4355..6353` → resolve `4356..6354` | yes | 217.10s | PASS |
 | OneNet adaptive (fair warm-start) | `65eed9d6c878133a4d81d9c381c69e742ad47fd0` | CUDA | 1,999/1,999 | issue `4355..6353` → resolve `4356..6354` | yes | 158.74s online; 821.3s total | PASS |
 
 OneNet used the official `onenet_tcn` update sequence: branch forecaster
@@ -93,6 +94,8 @@ update. The gate moved from `0.50025`; `branch_loss`, `decision_loss`, and
 official time-branch channel is used as the fixed scalar target projection.
 The fair run warm-started on the train split and selected `lr=3e-4` using
 validation only (`MSE=0.441491`; `lr=1e-3` scored `0.707949`).
+FSNet fair warm-start selected `lr=3e-4` using validation only (`MSE=0.892541`;
+`lr=1e-3` scored `1.368886`) and achieved MAE/MSE `0.200855/0.085754`.
 
 ## Verification
 

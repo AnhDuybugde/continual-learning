@@ -24,6 +24,7 @@ ETTh1 contains 17,420 hourly rows. The fixed split is train `[0, 3484)`, validat
 | ER | 0.001 | 0.091804 | 0.014680 | 1.034047 | 1,999 | 27.15 |
 | DPST-Core | 0.001 | 0.088667 | 0.014002 | 0.998713 | 1,999 | 40.81 |
 | DER++ | 0.001 | 0.091031 | 0.014569 | 1.025342 | 1,999 | 46.18 |
+| FSNet fair warm-start | 0.0003 | 0.200855 | 0.085754 | 2.262366 | 1,999 | 217.10 |
 
 All four native methods used the same evaluated sample IDs (`4355..6353`), finite predictions/losses, the same split/scaler, and fixed seed `7`. FSNet and adaptive OneNet used the same causal issue/resolve IDs in their separate official smoke. These results are not final scientific claims.
 
