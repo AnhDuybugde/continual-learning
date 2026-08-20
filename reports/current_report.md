@@ -43,6 +43,20 @@
 | DPST-Core | 0.088667 | 0.014002 | 0.998713 | 1,999 |
 | DER++ | 0.091031 | 0.014569 | 1.025342 | 1,999 |
 
+## Official External Baseline Smoke
+
+| Method | Official commit | Device | Resolved | Release timing | Finite | Runtime | Status |
+|---|---|---|---:|---|---|---:|---|
+| FSNet | `c776afc623fa6384a6a559121aacadd2bbea5968` | CUDA | 1,999/1,999 | issue `4355..6353` → resolve `4356..6354` | yes | 178.89s | PASS |
+| OneNet adaptive | `65eed9d6c878133a4d81d9c381c69e742ad47fd0` | CUDA | 1,999/1,999 | issue `4355..6353` → resolve `4356..6354` | yes | 173.15s | PASS |
+
+OneNet used the official `onenet_tcn` update sequence: branch forecaster
+update, decision-MLP short-term bias update, and long-term sigmoid weight
+update. The gate moved from `0.50025`; `branch_loss`, `decision_loss`, and
+`weight_loss` are stored in
+`artifacts/external_smoke/OneNet/smoke.json`. For the OT protocol, the final
+official time-branch channel is used as the fixed scalar target projection.
+
 ## Verification
 
 - Pipeline and integration tests: `13/13 PASS`.
