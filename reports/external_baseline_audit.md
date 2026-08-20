@@ -9,7 +9,7 @@ installed and no full benchmark was run.
 |---|---|---|---|
 | DER++ | [Mammoth](https://github.com/aimagelab/mammoth), `derpp` strategy | Official framework repository; HEAD checked 2026-08-19 | **Smoke PASS**, pinned HEAD `e75a491c69fd729edeb01431afb753d9157d9a81` |
 | FSNet | [Salesforce FSNet](https://github.com/salesforce/fsnet) | Official repository linked by the paper/authors; HEAD checked 2026-08-19 | Pinned HEAD `c776afc623fa6384a6a559121aacadd2bbea5968`; causal contract PASS, official entry import PASS |
-| OneNet | [yfzhang114/OneNet](https://github.com/yfzhang114/OneNet) | Official PyTorch implementation identified by the paper; HEAD checked 2026-08-19 | Pinned HEAD `65eed9d6c878133a4d81d9c381c69e742ad47fd0`; causal contract PASS, official import blocked by missing `wandb` |
+| OneNet | [yfzhang114/OneNet](https://github.com/yfzhang114/OneNet) | Official PyTorch implementation identified by the paper; HEAD checked 2026-08-19 | Pinned HEAD `65eed9d6c878133a4d81d9c381c69e742ad47fd0`; causal contract PASS, official import PASS, adaptive smoke PASS |
 | NatSR | Repository linked from the paper: `anonymous.4open.science/r/NatSR` | Paper-linked anonymous source; official provenance not verified | **unavailable**, not used and not blocking other baselines |
 
 ## Fairness checks still required
@@ -30,10 +30,9 @@ be downgraded in place.
 
 ## Gate
 
-The common pipeline gate remains PASS. DER++ is now smoke-verified. FSNet and
-OneNet remains blocked from official-model smoke by its runtime dependency and
-legacy experiment coupling; NatSR is unavailable. Full benchmark execution
-remains prohibited at this stage.
+The common pipeline gate remains PASS. DER++, FSNet, and OneNet are now
+smoke-verified through the shared causal boundary. NatSR is unavailable.
+Full benchmark execution remains prohibited at this stage.
 
 ## Causal adapter verification (2026-08-19)
 

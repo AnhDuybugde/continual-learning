@@ -7,9 +7,9 @@
 
 ## Version
 
-- Report date: 2026-08-19
+- Report date: 2026-08-20
 - Repository: `continual-learning`
-- Git commit at start of milestone: `ab8ba6a2d1916472892e187655bfe7d8f366f12f`
+- Git commit at start of milestone: `ef22c8b`
 - Branch: `master`
 - Working tree: modified (adapter/report changes; pre-existing root `curren_report.md` deletion preserved)
 - Data gốc: không sửa hoặc commit
@@ -50,7 +50,7 @@
 - Checkpoint/restore, pending queue, horizon release, scaler leakage và metric recomputation: PASS.
 - Không ghi nhận NaN/Inf trong smoke.
 - External adapter contract tests: `3/3 PASS`.
-- Official source probe: FSNet import PASS; OneNet BLOCKED by missing `wandb`.
+- Official source probe: FSNet and OneNet import PASS; `wandb==0.28.2` is locked.
 - Latest smoke rerun: `1/1 PASS`; exact artifacts are under `artifacts/smoke_etth1/`.
 - Official external smoke: FSNet `1999/1999 PASS` (178.89s); OneNet adaptive `1999/1999 PASS` (173.15s). OneNet gate moves from 0.50025 and updates over the stream; decision and weight losses are recorded in `artifacts/external_smoke/OneNet/smoke.json`.
 
