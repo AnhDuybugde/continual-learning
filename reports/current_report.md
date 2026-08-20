@@ -42,6 +42,9 @@
 | ER | 0.091804 | 0.014680 | 1.034047 | 1,999 |
 | DPST-Core | 0.088667 | 0.014002 | 0.998713 | 1,999 |
 | DER++ | 0.091031 | 0.014569 | 1.025342 | 1,999 |
+| OneNet adaptive | 0.488431 | 7.505736 | 5.501539 | 1,999 |
+
+OneNet adaptive is now included directly in this Smoke result table. Its metrics are prequential over the same 1,999 resolved ETTh1 samples and come from `artifacts/external_smoke/OneNet/smoke.json`; the method uses the official adaptive two-branch decision/update mechanism.
 
 ## Official External Baseline Smoke
 

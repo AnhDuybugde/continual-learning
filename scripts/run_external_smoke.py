@@ -27,15 +27,16 @@ def run_one(name: str, values: np.ndarray, timestamps, online_start: int, target
         pending = queue.pop_resolved(current_time)
         if pending is not None:
             target = values[current_time - horizon + 1 : current_time + 1, list(targets)].astype(np.float32)
+            prequential_error = pending.prediction - target
             before = time.perf_counter()
             diagnostic = adapter.observe_resolved(pending.inputs, target, pending.issue_time)
-            rows.append({"sample_id": pending.issue_time, "resolve_time": current_time, "update_seconds": time.perf_counter() - before, **diagnostic})
+            rows.append({"sample_id": pending.issue_time, "resolve_time": current_time, "prequential_mae": float(np.mean(np.abs(prequential_error))), "prequential_mse": float(np.mean(prequential_error ** 2)), "update_seconds": time.perf_counter() - before, **diagnostic})
         inputs, _ = make_window(values, current_time, lookback, horizon, targets)
         forecast = adapter.predict(inputs, current_time)
         queue.add(PendingForecast(current_time, inputs, forecast, adapter.model_step))
         if len(rows) >= prefix:
             break
-    result = {"name": name, "source": {"repository": adapter.source.repository, "commit": adapter.source.commit}, "prefix": prefix, "resolved": len(rows), "finite": all(row["finite_status"] for row in rows), "runtime_seconds": time.perf_counter() - wall, "rows": rows}
+    result = {"name": name, "source": {"repository": adapter.source.repository, "commit": adapter.source.commit}, "prefix": prefix, "resolved": len(rows), "finite": all(row["finite_status"] for row in rows), "prequential_mae": float(np.mean([row["prequential_mae"] for row in rows])), "prequential_mse": float(np.mean([row["prequential_mse"] for row in rows])), "runtime_seconds": time.perf_counter() - wall, "rows": rows}
     (output / name).mkdir(parents=True, exist_ok=True)
     (output / name / "smoke.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
     return result
