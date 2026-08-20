@@ -65,7 +65,23 @@ decision it used the current resolved sample plus a separate audit replay
 batch of previously resolved items, excluding the training replay draw. The
 best fixed candidate was λ=1.0 with mean audit loss `0.0161349`; the oracle
 selected λ=1.0 in all ten blocks and achieved `0.0162006`, i.e. no gain over
-the best fixed candidate. DPST v2 is therefore not justified by this oracle
-pilot and remains blocked.
+the best fixed candidate. This local diagnostic alone does not justify DPST
+v2; the broader fixed-trajectory artifact analysis below is the predeclared
+headroom diagnostic for deciding whether a new controller is worth designing.
 
 Artifact: `artifacts/dpst_milestone/oracle_diagnostic.json`.
+
+## Full-prefix fixed-trajectory blockwise oracle
+
+The existing 15 fixed-λ runs were analyzed without rerunning models. Each
+1,999-sample trajectory was split into 20 blocks of 100 samples, with MAE and
+MSE winners computed separately. λ=1 won 45.0% of aggregate MAE blocks and
+48.33% of aggregate MSE blocks. Best-λ changes were 15/12 blocks (MAE/MSE)
+for seed 0, 12/13 for seed 1, and 15/12 for seed 2. The weighted oracle gain
+over fixed λ=1 was 0.0010359 MAE (1.163%) and 0.0002246 MSE (1.608%).
+
+This confirms headroom for adaptive replay, but it is not confirmatory
+evidence because each fixed λ has a different model trajectory. The evidence
+rejects DPST-v1's controller, not the adaptive replay hypothesis.
+
+Artifact: `artifacts/dpst_milestone/fixed_lambda/blockwise_oracle.json`.

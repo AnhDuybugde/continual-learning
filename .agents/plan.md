@@ -50,4 +50,6 @@
 - [x] Confirm fixed λ=1.0 beats prior DPST-full pilot means on MAE and MSE.
 - [x] Run blockwise causal oracle diagnostic over λ ∈ {0, 0.5, 1} with separate audit replay batches.
 - [x] Oracle selected λ=1.0 in all blocks and showed no gain over best fixed λ; DPST v2 not justified.
-- [ ] Redesign/simplify DPST replay controller only if a future predeclared diagnostic shows potential; full benchmark remains blocked.
+- [x] Analyze all 1,999 samples in 100-sample fixed-trajectory blocks for each seed.
+- [x] Confirm blockwise headroom: aggregate oracle gain 1.163% MAE and 1.608% MSE versus fixed λ=1.
+- [ ] Design a new controller against this headroom evidence; full benchmark remains blocked.

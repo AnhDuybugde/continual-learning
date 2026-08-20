@@ -128,12 +128,14 @@ FSNet fair warm-start selected `lr=3e-4` using validation only (`MSE=0.892541`;
 
 ## Blockers and next action
 
-1. Keep DPST v2 blocked: the blockwise oracle found no adaptive replay gain over fixed λ=1.0 on the pilot prefix. Full benchmark remains gated; NatSR stays unavailable.
+1. DPST v2 has diagnostic headroom but is not implemented: the full-prefix
+   fixed-trajectory oracle found changing block winners and positive gain.
+   Full benchmark remains gated; NatSR stays unavailable.
 2. Keep NatSR marked `unavailable` unless official provenance becomes verifiable.
 3. Parquet remains optional; JSONL/CSV/NPZ are source of truth.
 4. Re-run fairness/leakage tests after each adapter.
-5. Fixed λ=1.0 currently beats DPST-full and the oracle does not identify a
-   useful adaptive replay opportunity. Do not run full benchmark yet.
+5. DPST-v1 controller is rejected; a new controller may be designed against
+   the blockwise oracle evidence. Do not run full benchmark yet.
 
 ## Fixed replay-weight milestone
 
@@ -155,6 +157,29 @@ did not beat fixed λ=1.0. Artifact:
 The recorded DPST-full trajectories reached λ=`0.9999999979` at the final
 update for all three seeds, so the current controller is effectively
 saturating at λ=1.0 rather than demonstrating an adaptive advantage.
+
+## Full-prefix fixed-trajectory blockwise oracle
+
+This artifact-only analysis reuses the existing 15 fixed-λ runs (ETTh1 H=1,
+1,999 evaluated samples per seed) and partitions each trajectory into 20
+blocks of 100 samples. MAE and MSE winners are computed separately. This is
+counterfactual across independently trained fixed-λ trajectories, so it is a
+headroom diagnostic rather than confirmatory evidence.
+
+| Seed | MAE λ=1 win rate | MAE winner changes | MAE oracle gain | MSE λ=1 win rate | MSE winner changes | MSE oracle gain |
+|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 50.0% | 15 | 0.0011274 | 50.0% | 12 | 0.0002811 |
+| 1 | 30.0% | 12 | 0.0007428 | 50.0% | 13 | 0.0001561 |
+| 2 | 55.0% | 15 | 0.0012376 | 45.0% | 12 | 0.0002365 |
+| Aggregate | 45.0% | — | 0.0010359 (1.163%) | 48.33% | — | 0.0002246 (1.608%) |
+
+The oracle therefore shows meaningful replay-weight headroom: λ=1 is not
+blockwise optimal on this stream, even though it is the best fixed setting in
+the aggregate end-to-end table. The prior 500-sample local counterfactual
+diagnostic tested a different estimand (one-step audit loss on an ER-0.5
+reference trajectory) and does not invalidate this full-prefix result.
+
+Artifact: `artifacts/dpst_milestone/fixed_lambda/blockwise_oracle.json`.
 
 ## Blockwise oracle diagnostic
 
@@ -179,4 +204,5 @@ python scripts/run_derpp_three_seeds.py --device cuda --prefix 2000 --seeds 0 1 
 python scripts/run_fixed_lambda_milestone.py --device cuda --prefix 2000 --seeds 0 1 2
 python scripts/run_external_smoke.py --prefix 1999 --methods FSNet OneNet
 python scripts/run_dpst_oracle_diagnostic.py --device cuda --prefix 500 --seed 7 --block-size 50
+python scripts/analyze_fixed_lambda_blocks.py --block-size 100
 ```

@@ -46,3 +46,9 @@
   λ=1.0 audit loss `0.0161349`; oracle `0.0162006`, selected λ=1.0 in all
   10 blocks, no potential gain. Artifact:
   `artifacts/dpst_milestone/oracle_diagnostic.json`. DPST v2 remains blocked.
+- Fixed-trajectory blockwise analysis over existing 1,999-sample artifacts,
+  20 blocks/seed: λ=1 wins 45.0% MAE blocks and 48.33% MSE blocks overall;
+  winner changes are 15/12, 12/13, 15/12 (MAE/MSE) for seeds 0/1/2. Oracle
+  gain versus fixed λ=1 is 1.163% MAE and 1.608% MSE. This confirms headroom
+  and rejects the v1 controller, not adaptive replay itself. Artifact:
+  `artifacts/dpst_milestone/fixed_lambda/blockwise_oracle.json`.
