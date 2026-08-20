@@ -42,3 +42,10 @@
 - [x] Run H=24 delayed-feedback smoke and verify release/update counts.
 - [x] Update current, benchmark, DPST, and failure reports with artifact paths.
 - [ ] Promote to multi-dataset/full benchmark; remains blocked until pilot evidence and fairness review are accepted.
+
+## Milestone 7 — Fixed replay-weight audit (pilot only)
+- [x] Add fixed replay-weight runner with controller betas disabled.
+- [x] Run λ ∈ {0, 0.25, 0.5, 0.75, 1.0} over ETTh1 H=1 and seeds 0,1,2.
+- [x] Re-run official FSNet and OneNet TCN smoke on the common causal boundary.
+- [x] Confirm fixed λ=1.0 beats prior DPST-full pilot means on MAE and MSE.
+- [ ] Redesign/simplify DPST replay controller before broader benchmark; full benchmark remains blocked.

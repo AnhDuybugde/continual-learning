@@ -32,3 +32,10 @@
 - Verification complete: deterministic pipeline 9/9, external adapters 3/3,
   and long smoke integration 1/1 with extended timeout; the default 120s
   aggregate command was only too short.
+- Fixed-lambda audit: 15/15 finite ETTh1 H=1 runs. Best fixed λ=1.0 had
+  MAE `0.089062±0.002591`, MSE `0.013963±0.000862`, better than prior
+  DPST-full `0.089573/0.014052`. Artifact:
+  `artifacts/dpst_milestone/fixed_lambda/results.json`.
+- Final official TCN external rerun: FSNet `0.200855/0.085754`, OneNet
+  `0.202376/0.083336`, both `1,999/1,999` finite. Full benchmark remains
+  blocked; replay controller needs redesign/simplification.

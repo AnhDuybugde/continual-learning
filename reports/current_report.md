@@ -26,6 +26,7 @@
 | DPST trajectory equivalence | PASS | CPU deterministic test, `rtol=1e-6`, `atol=1e-8` |
 | Three-seed H=1 ablation | PASS (pilot) | ETTh1, 1,999 resolved samples per run; not confirmatory |
 | H=24 delayed-feedback smoke | PASS (engineering) | 176 resolved samples; release IDs `4355..4530` |
+| Fixed replay-weight comparison | PASS (pilot) | 15/15 ETTh1 H=1 runs; fixed λ=1.0 best mean |
 
 ## Smoke result
 
@@ -46,7 +47,7 @@
 | DPST-Core | 0.088667 | 0.014002 | 0.998713 | 1,999 |
 | DER++ | 0.091031 | 0.014569 | 1.025342 | 1,999 |
 | FSNet fair warm-start | 0.200855 | 0.085754 | 2.262366 | 1,999 |
-| OneNet adaptive (fair warm-start) | 0.208074 | 0.088077 | 2.343685 | 1,999 |
+| OneNet adaptive (fair warm-start) | 0.202376 | 0.083336 | 2.279503 | 1,999 |
 
 OneNet adaptive is now included directly in this Smoke result table. The old random-initialization result was invalidated; this row is prequential over the same 1,999 resolved ETTh1 samples after train-only warm-start and validation LR selection. Artifact: `artifacts/external_smoke/OneNet/smoke.json`.
 
@@ -84,7 +85,7 @@ not a multi-seed or confirmatory result.
 | Method | Official commit | Device | Resolved | Release timing | Finite | Runtime | Status |
 |---|---|---|---:|---|---|---:|---|
 | FSNet fair warm-start | `c776afc623fa6384a6a559121aacadd2bbea5968` | CUDA | 1,999/1,999 | issue `4355..6353` → resolve `4356..6354` | yes | 217.10s | PASS |
-| OneNet adaptive (fair warm-start) | `65eed9d6c878133a4d81d9c381c69e742ad47fd0` | CUDA | 1,999/1,999 | issue `4355..6353` → resolve `4356..6354` | yes | 158.74s online; 821.3s total | PASS |
+| OneNet adaptive (fair warm-start) | `65eed9d6c878133a4d81d9c381c69e742ad47fd0` | CUDA | 1,999/1,999 | issue `4355..6353` → resolve `4356..6354` | yes | 70.37s online | PASS |
 
 OneNet used the official `onenet_tcn` update sequence: branch forecaster
 update, decision-MLP short-term bias update, and long-term sigmoid weight
@@ -109,8 +110,11 @@ FSNet fair warm-start selected `lr=3e-4` using validation only (`MSE=0.892541`;
 - External adapter contract tests: `3/3 PASS`.
 - Official source probe: FSNet and OneNet import PASS; `wandb==0.28.2` is locked.
 - Latest smoke rerun: `1/1 PASS`; exact artifacts are under `artifacts/smoke_etth1/`.
-- Official external smoke: OneNet fair warm-start `1999/1999 PASS` (158.74s online; 821.3s total). The prior random-initialization result is invalidated; the fair row uses train-only warm-start and validation LR selection.
+- Official external smoke: OneNet fair warm-start `1999/1999 PASS` (70.37s online). The prior random-initialization result is invalidated; the fair row uses train-only warm-start and validation LR selection.
 - DPST equivalence: PASS. H=1 ablation: 12/12 runs finite with 1,999/1,999 updates. H=24 smoke: 3/3 methods finite with 176/176 updates.
+- Fixed replay-weight milestone: 15/15 runs finite; fixed λ=1.0 was best on
+  both mean MAE and mean MSE.
+- Official external TCN rerun: FSNet and OneNet both `1,999/1,999` finite.
 
 ## Artifacts
 
@@ -128,7 +132,26 @@ FSNet fair warm-start selected `lr=3e-4` using validation only (`MSE=0.892541`;
 2. Keep NatSR marked `unavailable` unless official provenance becomes verifiable.
 3. Parquet remains optional; JSONL/CSV/NPZ are source of truth.
 4. Re-run fairness/leakage tests after each adapter.
-5. Only after all gates pass, consider broader benchmark execution.
+5. Redesign or simplify DPST replay control; fixed λ=1.0 currently beats
+   DPST-full on the ETTh1 pilot. Do not run full benchmark yet.
+
+## Fixed replay-weight milestone
+
+ETTh1 H=1, same split/scaler/LR selection/online prefix, three seeds, and
+1,999 resolved samples per run. Controllers were disabled (`beta_eta=0`,
+`beta_lambda=0`) while fixed replay weight λ was varied.
+
+| Fixed λ | MAE mean ± std | MSE mean ± std |
+|---:|---:|---:|
+| 0.00 | 0.097534 ± 0.004224 | 0.016304 ± 0.001400 |
+| 0.25 | 0.091718 ± 0.003259 | 0.014706 ± 0.001032 |
+| 0.50 | 0.089916 ± 0.002777 | 0.014234 ± 0.000926 |
+| 0.75 | 0.089168 ± 0.002565 | 0.014021 ± 0.000877 |
+| 1.00 | **0.089062 ± 0.002591** | **0.013963 ± 0.000862** |
+
+DPST-full from the prior pilot was MAE `0.089573` and MSE `0.014052`, so it
+did not beat fixed λ=1.0. Artifact:
+`artifacts/dpst_milestone/fixed_lambda/results.json`.
 
 ## Reproduction commands
 
@@ -137,4 +160,6 @@ python -m unittest discover -s tests -q
 python scripts/run_smoke.py --data data/all_six_datasets/ETT-small/ETTh1.csv --output artifacts/smoke_etth1 --prefix 2000 --device cpu
 python scripts/run_dpst_milestone.py --device cuda --prefix 2000 --h24-prefix 200 --seeds 0 1 2
 python scripts/run_derpp_three_seeds.py --device cuda --prefix 2000 --seeds 0 1 2
+python scripts/run_fixed_lambda_milestone.py --device cuda --prefix 2000 --seeds 0 1 2
+python scripts/run_external_smoke.py --prefix 1999 --methods FSNet OneNet
 ```

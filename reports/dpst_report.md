@@ -36,3 +36,19 @@ Reproduction commands:
 python scripts/run_dpst_milestone.py --device cuda --prefix 2000 --h24-prefix 200 --seeds 0 1 2
 python scripts/run_derpp_three_seeds.py --device cuda --prefix 2000 --seeds 0 1 2
 ```
+## Fixed replay-weight comparison
+
+The follow-up ETTh1 H=1 pilot compared λ ∈ {0, 0.25, 0.5, 0.75, 1.0} over
+seeds 0, 1, and 2 using the same split, scaler, validation-only LR selection,
+causal queue, and 1,999 resolved samples.
+
+| λ | MAE mean ± std | MSE mean ± std |
+|---:|---:|---:|
+| 0.00 | 0.097534 ± 0.004224 | 0.016304 ± 0.001400 |
+| 0.25 | 0.091718 ± 0.003259 | 0.014706 ± 0.001032 |
+| 0.50 | 0.089916 ± 0.002777 | 0.014234 ± 0.000926 |
+| 0.75 | 0.089168 ± 0.002565 | 0.014021 ± 0.000877 |
+| 1.00 | **0.089062 ± 0.002591** | **0.013963 ± 0.000862** |
+
+DPST-full was MAE `0.089573` and MSE `0.014052`; it therefore did not beat
+fixed λ=1.0. Artifact: `artifacts/dpst_milestone/fixed_lambda/results.json`.

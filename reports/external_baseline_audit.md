@@ -43,3 +43,7 @@ Full benchmark execution remains prohibited at this stage.
 - The pinned official model paths ran 1,999 resolved samples with finite values and correct `H=1` release timing. FSNet includes its official post-update gradient-store hook.
 - The OneNet wrapper now reproduces the official `onenet_tcn` sequence: branch forecaster update, short-term decision-MLP bias update, and long-term sigmoid weight update on detached branch forecasts. The ETTh1 OT adapter uses the final official time-branch channel as the scalar target projection; this mapping is fixed before online evaluation and is not tuned online.
 - Therefore FSNet and OneNet causal adapter smoke gates are **PASS**. The fair FSNet run selected `lr=3e-4` and achieved MAE/MSE `0.200855/0.085754` in 217.10 seconds for 1,999 resolved samples; the final OneNet run used the corrected decision-gradient path and fair warm-start. The OT projection is an architectural compatibility note, not a post-hoc result adjustment.
+- The final common CUDA rerun completed with FSNet `0.200855/0.085754` and
+  OneNet `0.202376/0.083336` MAE/MSE, each `1,999/1,999` finite. This confirms
+  causal protocol fairness, but the official architectures are not compute-
+  matched to the native shared-TCN methods.

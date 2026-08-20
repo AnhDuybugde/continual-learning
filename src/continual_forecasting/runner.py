@@ -32,6 +32,7 @@ class SmokeConfig:
     derpp_distillation_weight: float = 0.5
     dpst_beta_eta: float = 0.01
     dpst_beta_lambda: float = 0.01
+    dpst_lambda_init: float = 0.5
 
 
 def set_seed(seed: int) -> None:
@@ -61,6 +62,7 @@ def _method(name: str, input_size: int, target_size: int, cfg: SmokeConfig, lr: 
             replay_batch_size=cfg.replay_batch_size,
             dpst=DPSTConfig(
                 eta_init=lr,
+                lambda_init=cfg.dpst_lambda_init,
                 beta_eta=cfg.dpst_beta_eta,
                 beta_lambda=cfg.dpst_beta_lambda,
             ),
