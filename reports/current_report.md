@@ -42,16 +42,16 @@
 | ER | 0.091804 | 0.014680 | 1.034047 | 1,999 |
 | DPST-Core | 0.088667 | 0.014002 | 0.998713 | 1,999 |
 | DER++ | 0.091031 | 0.014569 | 1.025342 | 1,999 |
-| OneNet adaptive | 0.488431 | 7.505736 | 5.501539 | 1,999 |
+| OneNet adaptive (fair warm-start) | 0.208074 | 0.088077 | 2.343685 | 1,999 |
 
-OneNet adaptive is now included directly in this Smoke result table. Its metrics are prequential over the same 1,999 resolved ETTh1 samples and come from `artifacts/external_smoke/OneNet/smoke.json`; the method uses the official adaptive two-branch decision/update mechanism.
+OneNet adaptive is now included directly in this Smoke result table. The old random-initialization result was invalidated; this row is prequential over the same 1,999 resolved ETTh1 samples after train-only warm-start and validation LR selection. Artifact: `artifacts/external_smoke/OneNet/smoke.json`.
 
 ## Official External Baseline Smoke
 
 | Method | Official commit | Device | Resolved | Release timing | Finite | Runtime | Status |
 |---|---|---|---:|---|---|---:|---|
 | FSNet | `c776afc623fa6384a6a559121aacadd2bbea5968` | CUDA | 1,999/1,999 | issue `4355..6353` → resolve `4356..6354` | yes | 178.89s | PASS |
-| OneNet adaptive | `65eed9d6c878133a4d81d9c381c69e742ad47fd0` | CUDA | 1,999/1,999 | issue `4355..6353` → resolve `4356..6354` | yes | 173.15s | PASS |
+| OneNet adaptive (fair warm-start) | `65eed9d6c878133a4d81d9c381c69e742ad47fd0` | CUDA | 1,999/1,999 | issue `4355..6353` → resolve `4356..6354` | yes | 158.74s online; 821.3s total | PASS |
 
 OneNet used the official `onenet_tcn` update sequence: branch forecaster
 update, decision-MLP short-term bias update, and long-term sigmoid weight
@@ -59,6 +59,8 @@ update. The gate moved from `0.50025`; `branch_loss`, `decision_loss`, and
 `weight_loss` are stored in
 `artifacts/external_smoke/OneNet/smoke.json`. For the OT protocol, the final
 official time-branch channel is used as the fixed scalar target projection.
+The fair run warm-started on the train split and selected `lr=3e-4` using
+validation only (`MSE=0.441491`; `lr=1e-3` scored `0.707949`).
 
 ## Verification
 
@@ -69,7 +71,7 @@ official time-branch channel is used as the fixed scalar target projection.
 - External adapter contract tests: `3/3 PASS`.
 - Official source probe: FSNet and OneNet import PASS; `wandb==0.28.2` is locked.
 - Latest smoke rerun: `1/1 PASS`; exact artifacts are under `artifacts/smoke_etth1/`.
-- Official external smoke: FSNet `1999/1999 PASS` (178.89s); OneNet adaptive `1999/1999 PASS` (173.15s). OneNet gate moves from 0.50025 and updates over the stream; decision and weight losses are recorded in `artifacts/external_smoke/OneNet/smoke.json`.
+- Official external smoke: OneNet fair warm-start `1999/1999 PASS` (158.74s online; 821.3s total). The prior random-initialization result is invalidated; the fair row uses train-only warm-start and validation LR selection.
 
 ## Artifacts
 
